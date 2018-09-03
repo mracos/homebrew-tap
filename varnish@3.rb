@@ -1,34 +1,27 @@
-require 'formula'                                                                                                                                                                              
- 
 class VarnishAT3 <Formula 
   url 'http://varnish-cache.org/_downloads/varnish-3.0.2.tgz' 
   homepage 'http://www.varnish-cache.org/' 
   sha256 '973f60625e9690e0989e1bbc73c37ea53fc6291b8f7b03d617b76f8084a4a243' 
  
   depends_on 'pkg-config' => :build 
-  depends_on 'pcre' => :build 
-
-  # needs 
-  skip_clean :all 
+  depends_on 'pcre' => :build
  
   def install 
-    # http://www.varnish-cache.org/trac/wiki/Installation 
-    # system "./autogen.sh" 
-    system "./configure", "--enable-debugging-symbols", 
-                          "--enable-developer-warnings", 
-                          "--enable-dependency-tracking", 
-                          "--disable-dependency-tracking", 
+    # http://www.varnish-cache.org/trac/wiki/Installation  
+    system "./configure", "--disable-dependency-tracking", 
                           "--prefix=#{prefix}", 
                           "--localstatedir=#{var}" 
     system "make" 
     system "make install" 
-    (var+'varnish3').mkpath 
-
-    (prefix+'org.varnish-cache.varnishd.plist').write startup_plist
-    (prefix+'org.varnish-cache.varnishd.plist').chmod 0644
+    
+    (etc/"varnish3").install "etc/default.vcl"
+    (var/"varnish3").mkpath
   end
+ 
+  plist_options :manual => "#{HOMEBREW_PREFIX}/sbin/varnishd -n #{HOMEBREW_PREFIX}/var/varnish3 -f #{HOMEBREW_PREFIX}/etc/varnish3/default.vcl -s malloc,1G -T 127.0.0.1:2000 -a 0.0.0.0:8080 -F"
 
-  def startup_plist; <<-EOPLIST
+  def plist
+    <<~EOS
       <?xml version="1.0" encoding="UTF-8"?>
       <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
       <plist version="1.0">
@@ -59,6 +52,10 @@ class VarnishAT3 <Formula
         <string>/var/log/varnish.log</string>
       </dict>
       </plist>
-    EOPLIST
+    EOS
   end
+ 
+ test do
+   assert_match version.to_s, shell_output("#{sbin}/varnishd -V 2>&1")
+ end
 end 
