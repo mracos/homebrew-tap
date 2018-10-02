@@ -54,6 +54,11 @@ class VarnishAT3 <Formula
       </plist>
     EOS
   end
+  
+  def caveats; <<~EOS
+    You need to add the /usr/local/sbin folder to your path.
+  EOS
+  end
  
  test do
    assert_match version.to_s, shell_output("#{sbin}/varnishd -V 2>&1")
