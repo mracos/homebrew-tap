@@ -23,4 +23,4 @@ cask 'intellij-idea' do
                "~/Library/Preferences/IntelliJIdea#{version.major_minor}",
                '~/Library/Saved Application State/com.jetbrains.intellij.savedState',
              ]
-en
+end
