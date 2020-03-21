@@ -10,7 +10,7 @@ cask 'wacom-tablet-patched@5.3.7-6' do
   name 'Wacom Bamboo Tablet'
   homepage 'https://www.wacom.com/support/product-support/drivers'
 
-  pkg "Install-Wacom-Tablet-#{version}-patched.pkg"
+  pkg "Install-Wacom-Tablet-#{version.major_minor_patch}-patched.pkg"
 
   uninstall launchctl: 'com.wacom.pentablet',
             quit:      [
