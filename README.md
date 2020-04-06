@@ -1,2 +1,2 @@
-<h1 align="center">homebrew-personal</h1>
+<h1 align="center">homebrew-tab</h1>
 <blockquote align="center">profit</blockquote>
