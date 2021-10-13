@@ -5,6 +5,7 @@ cask 'anne-pro' do
   url "https://github.com/msvisser/AnnePro-mac/releases/download/v#{version}/AnnePro.app.zip"
   appcast 'https://github.com/msvisser/AnnePro-mac/releases.atom'
   name 'Anne Pro'
+  desc 'MacOS application for controlling AnnePro keyboard over bluetooth'
   homepage 'https://github.com/msvisser/AnnePro-mac'
 
   app 'AnnePro.app'
