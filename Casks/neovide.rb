@@ -1,8 +1,8 @@
 cask 'neovide' do
-  version '0.6.0'
-  sha256 '79c92f40e9b557dec6e2aafd0f248ba8af320e912fe44e0c4e5a93ddc1721458'
+  version '0.8.0'
+  sha256 '73ee776483161dad707bfaa118b79a9946f10223624e67127e6ecf73fb6eb626'
 
-  url "https://github.com/neovide/neovide/releases/download/#{version}/Neovide.app.zip"
+  url "https://github.com/neovide/neovide/releases/download/#{version}/Neovide.dmg.zip"
   appcast 'https://github.com/neovide/neovide/releases.atom'
   name 'Neovide'
   desc 'No Nonsense Neovim Client in Rust'
