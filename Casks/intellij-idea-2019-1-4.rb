@@ -1,4 +1,4 @@
-cask 'intellij-idea@2019.1.4' do
+cask 'intellij-idea-2019-1-4' do
   version '2019.1.4'
   sha256 '600b0446ae02fee208caf4e0423b984a3c853ef289fcd10b6b0e7081e1559d53'
 
