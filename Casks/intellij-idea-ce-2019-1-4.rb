@@ -3,9 +3,13 @@ cask 'intellij-idea-ce-2019-1-4' do
   sha256 '45e5d4454b7af328c9c1279559a49d8db80eea8eaa1187ff0fc1cc3643074be9'
 
   url "https://download.jetbrains.com/idea/ideaIC-#{version}.dmg"
-  appcast 'https://data.services.jetbrains.com/products/releases?code=IIC&latest=true&type=release'
+
+  livecheck do
+    url "https://data.services.jetbrains.com/products/releases?code=IIC&latest=true&type=release"
+    strategy :sparkle, &:version
+  end
+
   name 'IntelliJ IDEA Community Edition'
-  name 'IntelliJ IDEA CE'
   homepage 'https://www.jetbrains.com/idea/'
 
   auto_updates true
