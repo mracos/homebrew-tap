@@ -6,7 +6,8 @@ cask 'wacom-tablet-patched@5.3.7-6' do
 
   sha256 '97ed7a0e3f1d3b73c405d3b72adf4eef48374fe216e1fdcbc0a9eb84f823036b'
 
-  url "https://github.com/thenickdude/wacom-driver-fix/releases/download/#{version.after_comma}/Install-Wacom-Tablet-#{version.major_minor_patch}-patched.pkg"
+  url "https://github.com/thenickdude/wacom-driver-fix/releases/download/#{version.after_comma}/Install-Wacom-Tablet-#{version.major_minor_patch}-patched.pkg",
+    verified: "https://github.com/thenickdude/wacom-driver-fix"
   name 'Wacom Bamboo Tablet'
   homepage 'https://www.wacom.com/support/product-support/drivers'
 
