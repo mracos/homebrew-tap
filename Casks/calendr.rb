@@ -1,16 +1,15 @@
 cask "calendr" do
-  version "1.10.8"
-  sha256 "f4f2983a132f6d27957cb7149b3319ca6f5d810ba868b89258c3defce0f0345e"
+  version "1.11.0"
+  sha256 "3f587c21596ad64d51cb3ca0c3e4eb7cb326f428f89af5ceaff38a05410141f3"
 
   url "https://github.com/pakerwreah/Calendr/releases/download/v#{version}/Calendr.zip"
+  name "Calendr.app"
+  homepage "https://github.com/pakerwreah/Calendr"
 
   livecheck do
     url "https://github.com/pakerwreah/Calendr"
     strategy :github_releases
   end
-
-  name "Calendr.app"
-  homepage "https://github.com/pakerwreah/Calendr"
 
   app "Calendr.app"
 end
