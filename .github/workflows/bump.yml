@@ -1,6 +1,7 @@
 name: Bump versions
 
 on:
+  workflow_dispatch:
   schedule:
     # “At 10:10 on Saturday.”
     - cron:  '13 10 * * 6'
