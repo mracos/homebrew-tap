@@ -1,8 +1,8 @@
 class DisplaySwitch < Formula
   desc "Turn a $30 USB switch into a full-featured multi-monitor KVM switch"
   homepage "https://github.com/haimgel/display-switch/"
-  url "https://github.com/haimgel/display-switch/archive/refs/tags/0.3.0.tar.gz"
-  sha256 "2379768495b7788be549beb0fb43b837571cedd6385aae941029cfc4e8d5baca"
+  url "https://github.com/haimgel/display-switch/archive/refs/tags/1.3.1.tar.gz"
+  sha256 "dd9269581ff7a659f26e89d56474cdfe6dc2b486a59bf2119fd8f0c0222379e1"
   license "MIT"
 
   depends_on "libusb" => :build
