@@ -1,19 +1,20 @@
-class VarnishAT3 <Formula 
-  url 'http://varnish-cache.org/_downloads/varnish-3.0.2.tgz' 
-  homepage 'http://www.varnish-cache.org/' 
-  sha256 '973f60625e9690e0989e1bbc73c37ea53fc6291b8f7b03d617b76f8084a4a243' 
- 
-  depends_on 'pkg-config' => :build 
-  depends_on 'pcre' => :build
- 
-  def install 
-    # http://www.varnish-cache.org/trac/wiki/Installation  
-    system "./configure", "--disable-dependency-tracking", 
-                          "--prefix=#{prefix}", 
-                          "--localstatedir=#{var}" 
-    system "make" 
-    system "make install" 
-    
+class VarnishAT3 < Formula
+  desc "High-performance HTTP accelerator"
+  homepage "http://www.varnish-cache.org/"
+  url "http://varnish-cache.org/_downloads/varnish-3.0.2.tgz"
+  sha256 "973f60625e9690e0989e1bbc73c37ea53fc6291b8f7b03d617b76f8084a4a243"
+
+  depends_on "pcre" => :build
+  depends_on "pkg-config" => :build
+
+  def install
+    # http://www.varnish-cache.org/trac/wiki/Installation
+    system "./configure", "--disable-dependency-tracking",
+                          "--prefix=#{prefix}",
+                          "--localstatedir=#{var}"
+    system "make"
+    system "make", "install"
+
     (etc/"varnish3").install "etc/default.vcl"
     (var/"varnish3").mkpath
   end
@@ -27,13 +28,14 @@ class VarnishAT3 <Formula
     log_path var/"varnish/varnish.log"
     error_log_path var/"varnish/varnish.log"
   end
-  
-  def caveats; <<~EOS
-    You need to add the /usr/local/sbin folder to your path.
-  EOS
+
+  def caveats
+    <<~EOS
+      You need to add the /usr/local/sbin folder to your path.
+    EOS
   end
- 
- test do
-   assert_match version.to_s, shell_output("#{sbin}/varnishd -V 2>&1")
- end
-end 
+
+  test do
+    assert_match version.to_s, shell_output("#{sbin}/varnishd -V 2>&1")
+  end
+end
