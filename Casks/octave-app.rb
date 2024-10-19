@@ -15,5 +15,5 @@ cask "octave-app" do
     strategy :github_releases
   end
 
-  app "Octave-#{version}.app", target: "Octave.app"
+  app "Octave-#{version}.app"
 end
