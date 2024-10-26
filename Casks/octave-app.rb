@@ -15,5 +15,7 @@ cask "octave-app" do
     strategy :github_releases
   end
 
-  app "Octave-#{version}.app"
+  app_name = "Octave-#{version}.app"
+  app app_name
+  binary "#{appdir}/#{app_name}/Contents/Resources/usr/bin/octave"
 end
