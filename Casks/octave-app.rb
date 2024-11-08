@@ -18,4 +18,13 @@ cask "octave-app" do
   app_name = "Octave-#{version}.app"
   app app_name
   binary "#{appdir}/#{app_name}/Contents/Resources/usr/bin/octave"
+
+  # fix hardcoded perl for texinfo
+  # also see: https://github.com/octave-app/octave-app/issues/245
+  postflight do
+    Dir.glob("#{appdir}/#{app_name}/Contents/Resources/usr/opt/texinfo/bin/*").each do |file|
+      next unless File.file?(file)
+      inreplace file, "#!/usr/bin/perl5.30", "#!/usr/bin/perl"
+    end
+  end
 end
