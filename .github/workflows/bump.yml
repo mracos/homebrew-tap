@@ -33,6 +33,28 @@ jobs:
           }; x'
 
       - name: Run brew bump
+        id: bump
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: brew bump --tap "$GITHUB_REPOSITORY" --no-fork --open-pr
+        run: |
+          output=$(brew bump --tap "$GITHUB_REPOSITORY" --no-fork --open-pr 2>&1)
+          echo "$output"
+
+          # Extract PR URL from output (brew bump outputs PR URL on success)
+          pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
+
+          if [ -n "$pr_url" ]; then
+            echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
+            pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
+            echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Enable auto-merge
+        if: steps.bump.outputs.pr_number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge ${{ steps.bump.outputs.pr_number }} \
+            --auto \
+            --squash \
+            --delete-branch
