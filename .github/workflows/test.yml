@@ -1,0 +1,71 @@
+name: Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Cache Homebrew Bundler RubyGems
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
+          key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
+          restore-keys: ${{ runner.os }}-rubygems-
+
+      - name: Install Homebrew Bundler RubyGems
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: brew install-bundler-gems
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
+            Casks/**
+            Formula/**
+
+      - name: Run brew audit
+        if: steps.changed-files.outputs.any_changed == 'true'
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Auditing $file"
+            brew audit --online --git --skip-style "$file" || exit 1
+          done
+
+      - name: Run brew style
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Checking style for $file"
+            brew style "$file" || exit 1
+          done
+
+      - name: Validate download URLs
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Validating URLs in $file"
+            # Extract URLs from the file and check if they're accessible
+            urls=$(grep -oE 'url ["\047]https?://[^"\047]+["\047]' "$file" | sed -E 's/url ["\047]([^"\047]+)["\047]/\1/')
+            for url in $urls; do
+              echo "Checking $url"
+              if ! curl --output /dev/null --silent --head --fail "$url"; then
+                echo "Error: URL $url is not accessible"
+                exit 1
+              fi
+            done
+          done
