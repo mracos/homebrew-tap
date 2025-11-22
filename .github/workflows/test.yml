@@ -42,16 +42,20 @@ jobs:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            echo "Auditing $file"
-            brew audit --online --git --skip-style "$file" || exit 1
+            # Extract the name from the file path (remove directory and .rb extension)
+            name=$(basename "$file" .rb)
+            echo "Auditing $name (from $file)"
+            brew audit --online --git --skip-style "$name" || exit 1
           done
 
       - name: Run brew style
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            echo "Checking style for $file"
-            brew style "$file" || exit 1
+            # Extract the name from the file path (remove directory and .rb extension)
+            name=$(basename "$file" .rb)
+            echo "Checking style for $name (from $file)"
+            brew style "$name" || exit 1
           done
 
       - name: Validate download URLs
