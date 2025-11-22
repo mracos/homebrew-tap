@@ -46,7 +46,7 @@ jobs:
           # This handles cases where brew outputs warnings before the JSON
           extracted=$(echo "$outdated" | awk '/^[\[{]/,0')
           
-          # If extraction is empty, use empty array
+          # If extraction is empty, use empty array (brew livecheck --tap returns arrays)
           if [ -z "$extracted" ]; then
             extracted="[]"
           fi
