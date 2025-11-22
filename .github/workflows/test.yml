@@ -66,6 +66,11 @@ jobs:
             # Extract URLs from the file and check if they're accessible
             urls=$(grep -oE 'url ["\047]https?://[^"\047]+["\047]' "$file" | sed -E 's/url ["\047]([^"\047]+)["\047]/\1/')
             for url in $urls; do
+              # Skip URLs with Ruby interpolation (e.g., #{variable})
+              if echo "$url" | grep -q '#{'; then
+                echo "Skipping $url (contains Ruby interpolation)"
+                continue
+              fi
               echo "Checking $url"
               if ! curl --output /dev/null --silent --head --fail "$url"; then
                 echo "Error: URL $url is not accessible"
