@@ -42,16 +42,20 @@ jobs:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            echo "Auditing $file"
-            brew audit --online --git --skip-style "$file" || exit 1
+            # Extract the name from the file path (remove directory and .rb extension)
+            name=$(basename "$file" .rb)
+            echo "Auditing $name (from $file)"
+            brew audit --online --git --skip-style "$name" || exit 1
           done
 
       - name: Run brew style
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            echo "Checking style for $file"
-            brew style "$file" || exit 1
+            # Extract the name from the file path (remove directory and .rb extension)
+            name=$(basename "$file" .rb)
+            echo "Checking style for $name (from $file)"
+            brew style "$name" || exit 1
           done
 
       - name: Validate download URLs
@@ -62,6 +66,12 @@ jobs:
             # Extract URLs from the file and check if they're accessible
             urls=$(grep -oE 'url ["\047]https?://[^"\047]+["\047]' "$file" | sed -E 's/url ["\047]([^"\047]+)["\047]/\1/')
             for url in $urls; do
+              # Skip URLs with Ruby interpolation (e.g., #{variable})
+              # Using simplified pattern '#\{' instead of '#\{[^}]+\}' for better shell compatibility
+              if echo "$url" | grep -qE '#\{'; then
+                echo "Skipping $url (contains Ruby interpolation)"
+                continue
+              fi
               echo "Checking $url"
               if ! curl --output /dev/null --silent --head --fail "$url"; then
                 echo "Error: URL $url is not accessible"

@@ -15,7 +15,5 @@ cask "neovim-nightly" do
   name "Neovim Nightly"
   homepage "https://neovim.io/"
 
-  conflicts_with formula: "neovim"
-
   binary "nvim-macos-#{arch_fragment}/bin/nvim"
 end
