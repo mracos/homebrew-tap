@@ -41,7 +41,17 @@ jobs:
           # Redirect stderr to stdout and capture everything
           outdated=$(brew livecheck --tap="$GITHUB_REPOSITORY" --newer-only --json 2>&1 || echo "[]")
           echo "$outdated"
-          echo "$outdated" > /tmp/outdated.json
+          
+          # Extract JSON from output (everything from first '[' onwards)
+          # This handles cases where brew outputs warnings before the JSON
+          extracted=$(echo "$outdated" | sed -n '/^\[/,$p')
+          
+          # If extraction is empty or invalid, use empty array
+          if [ -z "$extracted" ]; then
+            extracted="[]"
+          fi
+          
+          echo "$extracted" > /tmp/outdated.json
           
           # Validate JSON before proceeding
           if ! jq empty /tmp/outdated.json 2>/dev/null; then
