@@ -38,9 +38,16 @@ jobs:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Use brew livecheck to find outdated formulas and casks in this tap
-          outdated=$(brew livecheck --tap="$GITHUB_REPOSITORY" --newer-only --json 2>&1)
+          # Redirect stderr to stdout and capture everything
+          outdated=$(brew livecheck --tap="$GITHUB_REPOSITORY" --newer-only --json 2>&1 || echo "[]")
           echo "$outdated"
           echo "$outdated" > /tmp/outdated.json
+          
+          # Validate JSON before proceeding
+          if ! jq empty /tmp/outdated.json 2>/dev/null; then
+            echo "Invalid JSON output from brew livecheck, treating as no updates"
+            echo "[]" > /tmp/outdated.json
+          fi
 
       - name: Bump outdated packages
         id: bump
@@ -50,17 +57,17 @@ jobs:
           # Process each outdated package (formulas and casks)
           pr_numbers=""
           
-          # Check if the JSON file exists and is valid
-          if [ ! -s /tmp/outdated.json ]; then
-            echo "No outdated packages found or livecheck returned no valid JSON"
-            exit 0
-          fi
-          
           # Parse the livecheck JSON output to get outdated casks
-          outdated_casks=$(jq -r '.[] | select(.version.outdated == true and .cask != null) | .cask' /tmp/outdated.json 2>/dev/null || echo "")
+          # JSON structure: [{"cask": "name", "version": {"current": "x", "latest": "y"}}]
+          outdated_casks=$(jq -r '.[] | select(.version.latest != null and .version.latest != "" and .cask != null) | .cask' /tmp/outdated.json 2>/dev/null || echo "")
           
           # Parse the livecheck JSON output to get outdated formulas
-          outdated_formulas=$(jq -r '.[] | select(.version.outdated == true and .formula != null) | .formula' /tmp/outdated.json 2>/dev/null || echo "")
+          outdated_formulas=$(jq -r '.[] | select(.version.latest != null and .version.latest != "" and .formula != null) | .formula' /tmp/outdated.json 2>/dev/null || echo "")
+          
+          if [ -z "$outdated_casks" ] && [ -z "$outdated_formulas" ]; then
+            echo "No outdated packages found"
+            exit 0
+          fi
           
           # Bump each outdated cask
           for cask in $outdated_casks; do
@@ -72,7 +79,11 @@ jobs:
             pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
             if [ -n "$pr_url" ]; then
               pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
-              pr_numbers="$pr_numbers $pr_number"
+              if [ -n "$pr_numbers" ]; then
+                pr_numbers="$pr_numbers $pr_number"
+              else
+                pr_numbers="$pr_number"
+              fi
               echo "Created PR #$pr_number for cask $cask"
             fi
           done
@@ -87,13 +98,18 @@ jobs:
             pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
             if [ -n "$pr_url" ]; then
               pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
-              pr_numbers="$pr_numbers $pr_number"
+              if [ -n "$pr_numbers" ]; then
+                pr_numbers="$pr_numbers $pr_number"
+              else
+                pr_numbers="$pr_number"
+              fi
               echo "Created PR #$pr_number for formula $formula"
             fi
           done
           
-          # Output all PR numbers for auto-merge step
+          # Output all PR numbers for auto-merge step (trim whitespace)
           if [ -n "$pr_numbers" ]; then
+            pr_numbers=$(echo "$pr_numbers" | xargs)
             echo "pr_numbers=$pr_numbers" >> $GITHUB_OUTPUT
           fi
 
