@@ -67,7 +67,7 @@ jobs:
             urls=$(grep -oE 'url ["\047]https?://[^"\047]+["\047]' "$file" | sed -E 's/url ["\047]([^"\047]+)["\047]/\1/')
             for url in $urls; do
               # Skip URLs with Ruby interpolation (e.g., #{variable})
-              if echo "$url" | grep -qE '#\{[^}]+\}'; then
+              if echo "$url" | grep -qE '#\{'; then
                 echo "Skipping $url (contains Ruby interpolation)"
                 continue
               fi
