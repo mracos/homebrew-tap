@@ -44,16 +44,16 @@ jobs:
           
           # Extract JSON from output (everything from first '[' or '{' onwards)
           # This handles cases where brew outputs warnings before the JSON
-          extracted=$(echo "$outdated" | sed -n '/^[\[{]/,$p')
+          extracted=$(echo "$outdated" | awk '/^[\[{]/{found=1} found')
           
-          # If extraction is empty or invalid, use empty array
+          # If extraction is empty, use empty array
           if [ -z "$extracted" ]; then
             extracted="[]"
           fi
           
           echo "$extracted" > /tmp/outdated.json
           
-          # Validate JSON before proceeding
+          # Validate extracted JSON before proceeding
           if ! jq empty /tmp/outdated.json 2>/dev/null; then
             echo "Invalid JSON output from brew livecheck, treating as no updates"
             echo "[]" > /tmp/outdated.json
