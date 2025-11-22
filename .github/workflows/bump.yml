@@ -32,29 +32,97 @@ jobs:
             echo "password=${{ secrets.GITHUB_TOKEN }}";
           }; x'
 
-      - name: Run brew bump
+      - name: Check for outdated packages
+        id: livecheck
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use brew livecheck to find outdated formulas and casks in this tap
+          # Redirect stderr to stdout and capture everything
+          outdated=$(brew livecheck --tap="$GITHUB_REPOSITORY" --newer-only --json 2>&1 || echo "[]")
+          echo "$outdated"
+          echo "$outdated" > /tmp/outdated.json
+          
+          # Validate JSON before proceeding
+          if ! jq empty /tmp/outdated.json 2>/dev/null; then
+            echo "Invalid JSON output from brew livecheck, treating as no updates"
+            echo "[]" > /tmp/outdated.json
+          fi
+
+      - name: Bump outdated packages
         id: bump
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          output=$(brew bump --tap "$GITHUB_REPOSITORY" --no-fork --open-pr 2>&1)
-          echo "$output"
-
-          # Extract PR URL from output (brew bump outputs PR URL on success)
-          pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
-
-          if [ -n "$pr_url" ]; then
-            echo "pr_url=$pr_url" >> $GITHUB_OUTPUT
-            pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
-            echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+          # Process each outdated package (formulas and casks)
+          pr_numbers=""
+          
+          # Parse the livecheck JSON output to get outdated casks
+          # JSON structure: [{"cask": "name", "version": {"current": "x", "latest": "y"}}]
+          outdated_casks=$(jq -r '.[] | select(.version.latest != null and .version.latest != "" and .cask != null) | .cask' /tmp/outdated.json 2>/dev/null || echo "")
+          
+          # Parse the livecheck JSON output to get outdated formulas
+          outdated_formulas=$(jq -r '.[] | select(.version.latest != null and .version.latest != "" and .formula != null) | .formula' /tmp/outdated.json 2>/dev/null || echo "")
+          
+          if [ -z "$outdated_casks" ] && [ -z "$outdated_formulas" ]; then
+            echo "No outdated packages found"
+            exit 0
+          fi
+          
+          # Bump each outdated cask
+          for cask in $outdated_casks; do
+            echo "Bumping cask $cask..."
+            output=$(brew bump-cask-pr --no-browse --no-fork "$cask" 2>&1 || true)
+            echo "$output"
+            
+            # Extract PR number from output
+            pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
+            if [ -n "$pr_url" ]; then
+              pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
+              if [ -n "$pr_numbers" ]; then
+                pr_numbers="$pr_numbers $pr_number"
+              else
+                pr_numbers="$pr_number"
+              fi
+              echo "Created PR #$pr_number for cask $cask"
+            fi
+          done
+          
+          # Bump each outdated formula
+          for formula in $outdated_formulas; do
+            echo "Bumping formula $formula..."
+            output=$(brew bump-formula-pr --no-browse --no-fork "$formula" 2>&1 || true)
+            echo "$output"
+            
+            # Extract PR number from output
+            pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
+            if [ -n "$pr_url" ]; then
+              pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
+              if [ -n "$pr_numbers" ]; then
+                pr_numbers="$pr_numbers $pr_number"
+              else
+                pr_numbers="$pr_number"
+              fi
+              echo "Created PR #$pr_number for formula $formula"
+            fi
+          done
+          
+          # Output all PR numbers for auto-merge step (trim whitespace)
+          if [ -n "$pr_numbers" ]; then
+            pr_numbers=$(echo "$pr_numbers" | xargs)
+            echo "pr_numbers=$pr_numbers" >> $GITHUB_OUTPUT
           fi
 
       - name: Enable auto-merge
-        if: steps.bump.outputs.pr_number
+        if: steps.bump.outputs.pr_numbers
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr merge ${{ steps.bump.outputs.pr_number }} \
-            --auto \
-            --squash \
-            --delete-branch
+          # Enable auto-merge for all created PRs
+          for pr_number in ${{ steps.bump.outputs.pr_numbers }}; do
+            echo "Enabling auto-merge for PR #$pr_number"
+            gh pr merge "$pr_number" \
+              --auto \
+              --squash \
+              --delete-branch || echo "Failed to enable auto-merge for PR #$pr_number"
+          done
