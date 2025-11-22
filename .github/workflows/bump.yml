@@ -44,7 +44,7 @@ jobs:
           
           # Extract JSON from output (everything from first '[' or '{' onwards)
           # This handles cases where brew outputs warnings before the JSON
-          extracted=$(echo "$outdated" | awk '/^[\[{]/{found=1} found')
+          extracted=$(echo "$outdated" | awk '/^[\[{]/,0')
           
           # If extraction is empty, use empty array
           if [ -z "$extracted" ]; then
