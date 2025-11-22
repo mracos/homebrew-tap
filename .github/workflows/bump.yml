@@ -42,9 +42,9 @@ jobs:
           outdated=$(brew livecheck --tap="$GITHUB_REPOSITORY" --newer-only --json 2>&1 || echo "[]")
           echo "$outdated"
           
-          # Extract JSON from output (everything from first '[' onwards)
+          # Extract JSON from output (everything from first '[' or '{' onwards)
           # This handles cases where brew outputs warnings before the JSON
-          extracted=$(echo "$outdated" | sed -n '/^\[/,$p')
+          extracted=$(echo "$outdated" | sed -n '/^[\[{]/,$p')
           
           # If extraction is empty or invalid, use empty array
           if [ -z "$extracted" ]; then
