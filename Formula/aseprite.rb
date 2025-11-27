@@ -3,7 +3,6 @@ class Aseprite < Formula
   homepage "https://github.com/aseprite/aseprite"
   url "https://github.com/aseprite/aseprite/releases/download/v1.3.15.4/Aseprite-v1.3.15.5-Source.zip"
   sha256 "2402325af2d6b7f663a5f06f728a6d2a1a2053e17cd97afa483b155689a3e9d4"
-  version "1.3.15.5"
   license :cannot_represent
   head "https://github.com/aseprite/aseprite.git", branch: "main"
 
@@ -50,13 +49,24 @@ class Aseprite < Formula
 
     prefix.install "build/bin/Aseprite.app"
     bin.install_symlink prefix/"Aseprite.app/Contents/MacOS/aseprite" => "aseprite"
-
   end
 
   def caveats
     <<~EOS
-      You can symlink the bundled app into /Applications with:
+      To launch the GUI, symlink the bundled app into /Applications with:
         ln -s #{opt_prefix}/Aseprite.app /Applications/Aseprite.app
+
+      Removing the formula will not automatically remove that manual link.
+      When uninstalling, delete the symlink if it still exists:
+        rm -f /Applications/Aseprite.app
+
+      Aseprite stores state in the following locations, which you can remove
+      manually to mimic `brew uninstall --zap`:
+        ~/Library/Application Support/Aseprite
+        ~/Library/Logs/Homebrew/aseprite
+        ~/Library/Preferences/Aseprite.plist
+        ~/Library/Preferences/org.aseprite.Aseprite.plist
+        ~/Library/Saved Application State/org.aseprite.Aseprite.savedState
     EOS
   end
 
