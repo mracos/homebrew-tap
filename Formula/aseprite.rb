@@ -1,8 +1,9 @@
 class Aseprite < Formula
   desc "Animated sprite editor and pixel art tool built from source"
   homepage "https://github.com/aseprite/aseprite"
-  url "https://github.com/aseprite/aseprite/archive/refs/tags/v1.3.15.4.tar.gz"
-  sha256 "00bc16c84763a10b65fdee76e14dea2b5b8569ee8e3285a230c59ac66a4d4471"
+  url "https://github.com/aseprite/aseprite/releases/download/v1.3.15.4/Aseprite-v1.3.15.5-Source.zip"
+  sha256 "2402325af2d6b7f663a5f06f728a6d2a1a2053e17cd97afa483b155689a3e9d4"
+  version "1.3.15.5"
   license :cannot_represent
   head "https://github.com/aseprite/aseprite.git", branch: "main"
 
