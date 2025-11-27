@@ -51,16 +51,12 @@ class Aseprite < Formula
     prefix.install "build/bin/Aseprite.app"
     bin.install_symlink prefix/"Aseprite.app/Contents/MacOS/aseprite" => "aseprite"
 
-    apps_dir = Pathname("/Applications")
-    apps_dir.mkpath
-    dest = apps_dir/"Aseprite.app"
-    rm_f dest if dest.symlink? || dest.exist?
-    ln_sf prefix/"Aseprite.app", dest
   end
 
   def caveats
     <<~EOS
-      Aseprite.app is symlinked into /Applications automatically.
+      You can symlink the bundled app into /Applications with:
+        ln -s #{opt_prefix}/Aseprite.app /Applications/Aseprite.app
     EOS
   end
 
