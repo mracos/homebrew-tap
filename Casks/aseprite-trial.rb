@@ -12,10 +12,9 @@ cask "aseprite-trial" do
     regex(/Aseprite Trial v(\d+(?:\.\d+)+) for macOS/)
   end
 
-  depends_on macos: ">= :big_sur"
-  conflicts_with cask: "aseprite"
-
   auto_updates false
+  conflicts_with cask: "aseprite"
+  depends_on macos: ">= :big_sur"
 
   app "Aseprite.app"
 

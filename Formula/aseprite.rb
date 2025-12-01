@@ -11,19 +11,19 @@ class Aseprite < Formula
     strategy :github_latest
   end
 
-  depends_on macos: :ventura
   depends_on "cmake" => :build
   depends_on "ninja" => :build
+  depends_on macos: :ventura
 
-  on_arm do
-    resource "skia" do
+  resource "skia" do
+    on_arm do
       url "https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-macOS-Release-arm64.zip"
       sha256 "22663000967fc2c3f1a78190082228474955de02ffd13a352b39a48b204dac9a"
     end
   end
 
-  on_intel do
-    resource "skia" do
+  resource "skia" do
+    on_intel do
       url "https://github.com/aseprite/skia/releases/download/m124-08a5439a6b/Skia-macOS-Release-x64.zip"
       sha256 "c11c5fbfa3f8cdefa2255d37cdd1eca823d195ff61929f457a4714f1b6db500a"
     end
