@@ -64,7 +64,7 @@ jobs:
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             echo "Validating URLs in $file"
             # Extract URLs from the file and check if they're accessible
-            urls=$(grep -oE 'url ["\047]https?://[^"\047]+["\047]' "$file" | sed -E 's/url ["\047]([^"\047]+)["\047]/\1/')
+            urls=$(grep -oE "url ['\"]https?://[^'\"]+['\"]" "$file" | sed -E "s/url ['\"]([^'\"]+)['\"]/\\1/")
             for url in $urls; do
               # Skip URLs with Ruby interpolation (e.g., #{variable})
               # Using simplified pattern '#\{' instead of '#\{[^}]+\}' for better shell compatibility
