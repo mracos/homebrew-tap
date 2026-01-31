@@ -18,6 +18,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
 
       - name: Bump outdated packages
+        id: bump
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_DEVELOPER: 1
@@ -35,8 +36,37 @@ jobs:
             exit 0
           fi
 
+          pr_urls=""
           for pkg in $packages; do
             echo "::group::Bumping $pkg"
-            brew bump --open-pr --no-fork "$pkg" || echo "Failed: $pkg"
+
+            # Determine if formula or cask
+            is_formula=$(echo "$outdated" | jq -r --arg pkg "$pkg" '.[] | select(.formula == $pkg) | .formula')
+            new_version=$(echo "$outdated" | jq -r --arg pkg "$pkg" '.[] | select(.formula == $pkg or .cask == $pkg) | .version.latest')
+
+            if [ -n "$is_formula" ]; then
+              output=$(brew bump-formula-pr --no-audit --no-browse --no-fork --version="$new_version" "$pkg" 2>&1) || true
+            else
+              output=$(brew bump-cask-pr --no-audit --no-browse --no-fork --version="$new_version" "$pkg" 2>&1) || true
+            fi
+            echo "$output"
+
+            pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
+            if [ -n "$pr_url" ]; then
+              pr_urls="$pr_urls $pr_url"
+              echo "Created: $pr_url"
+            fi
             echo "::endgroup::"
+          done
+
+          echo "pr_urls=$pr_urls" >> "$GITHUB_OUTPUT"
+
+      - name: Enable auto-merge
+        if: steps.bump.outputs.pr_urls
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for pr_url in ${{ steps.bump.outputs.pr_urls }}; do
+            echo "Enabling auto-merge for $pr_url"
+            gh pr merge "$pr_url" --auto --squash --delete-branch || echo "Failed to enable auto-merge for $pr_url"
           done

@@ -1,14 +1,31 @@
 class Aseprite < Formula
   desc "Animated sprite editor and pixel art tool built from source"
   homepage "https://github.com/aseprite/aseprite"
-  url "https://github.com/aseprite/aseprite/releases/download/v1.3.15.4/Aseprite-v1.3.15.5-Source.zip"
-  sha256 "2402325af2d6b7f663a5f06f728a6d2a1a2053e17cd97afa483b155689a3e9d4"
+  # Aseprite has mismatched tag/asset versions, e.g. tag v1.3.16 -> Aseprite-v1.3.16.1-Source.zip
+  # Version format: "tag,asset_version" - both needed to construct download URL
+  version "1.3.16,1.3.16.1"
+  url "https://github.com/aseprite/aseprite/releases/download/v#{version.to_s.split(",")[0]}/Aseprite-v#{version.to_s.split(",")[1]}-Source.zip"
+  sha256 "8961e7cff572f7bd432c240be5214c9dd228d4bb582521a44ff554f011de551a"
   license :cannot_represent
   head "https://github.com/aseprite/aseprite.git", branch: "main"
 
   livecheck do
-    url :stable
-    strategy :github_latest
+    url "https://api.github.com/repos/aseprite/aseprite/releases?per_page=10"
+    strategy :json do |json|
+      json.filter_map do |release|
+        next if release["prerelease"] || release["draft"]
+        next if release["tag_name"]&.include?("beta")
+
+        tag = release["tag_name"]&.delete_prefix("v")
+        asset = release["assets"]&.find { |a| a["name"]&.include?("Source.zip") }
+        next if tag.blank? || asset.nil?
+
+        asset_version = asset["name"][/Aseprite-v([\d.]+)-Source\.zip/, 1]
+        next if asset_version.blank?
+
+        "#{tag},#{asset_version}"
+      end.first
+    end
   end
 
   depends_on "cmake" => :build
@@ -71,6 +88,7 @@ class Aseprite < Formula
   end
 
   test do
-    assert_match version.to_s, shell_output("#{bin}/aseprite --version")
+    asset_version = version.to_s.split(",").last
+    assert_match asset_version, shell_output("#{bin}/aseprite --version")
   end
 end
