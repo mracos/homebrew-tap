@@ -3,136 +3,40 @@ name: Bump versions
 on:
   workflow_dispatch:
   schedule:
-    # “At 10:10 on Saturday.”
-    - cron:  '13 10 * * 6'
+    # "At 10:13 on Saturday."
+    - cron: '13 10 * * 6'
 
 jobs:
   bump:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
-      - name: Set up Homebrew
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
-      - name: Cache Homebrew Bundler RubyGems
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.set-up-homebrew.outputs.gems-path }}
-          key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
-          restore-keys: ${{ runner.os }}-rubygems-
-      - name: Install Homebrew Bundler RubyGems
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: brew install-bundler-gems
-      - name: Authenticate
+      - uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Configure git
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          git config --local credential.helper '!x() {
-            echo "username=${GITHUB_REPOSITORY_OWNER}";
-            echo "password=${{ secrets.GITHUB_TOKEN }}";
-          }; x'
-
-      - name: Check for outdated packages
-        id: livecheck
-        env:
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Use brew livecheck to find outdated formulas and casks in this tap
-          # Redirect stderr to stdout and capture everything
-          outdated=$(brew livecheck --tap="$GITHUB_REPOSITORY" --newer-only --json 2>&1 || echo "[]")
-          echo "$outdated"
-          
-          # Extract JSON from output (everything from first '[' or '{' onwards)
-          # This handles cases where brew outputs warnings before the JSON
-          extracted=$(echo "$outdated" | awk '/^[\[{]/,0')
-          
-          # If extraction is empty, use empty array (brew livecheck --tap returns arrays)
-          if [ -z "$extracted" ]; then
-            extracted="[]"
-          fi
-          
-          echo "$extracted" > /tmp/outdated.json
-          
-          # Validate extracted JSON before proceeding
-          if ! jq empty /tmp/outdated.json 2>/dev/null; then
-            echo "Invalid JSON output from brew livecheck, treating as no updates"
-            echo "[]" > /tmp/outdated.json
-          fi
 
       - name: Bump outdated packages
-        id: bump
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_DEVELOPER: 1
         run: |
-          # Process each outdated package (formulas and casks)
-          pr_numbers=""
-          
-          # Parse the livecheck JSON output to get outdated casks
-          # JSON structure: [{"cask": "name", "version": {"current": "x", "latest": "y"}}]
-          outdated_casks=$(jq -r '.[] | select(.version.latest != null and .version.latest != "" and .cask != null) | .cask' /tmp/outdated.json 2>/dev/null || echo "")
-          
-          # Parse the livecheck JSON output to get outdated formulas
-          outdated_formulas=$(jq -r '.[] | select(.version.latest != null and .version.latest != "" and .formula != null) | .formula' /tmp/outdated.json 2>/dev/null || echo "")
-          
-          if [ -z "$outdated_casks" ] && [ -z "$outdated_formulas" ]; then
-            echo "No outdated packages found"
+          # Get outdated packages from livecheck
+          outdated=$(brew livecheck --tap="$GITHUB_REPOSITORY" --newer-only --json 2>/dev/null || echo "[]")
+          echo "Livecheck output:"
+          echo "$outdated" | jq .
+
+          # Extract package names (formulas and casks)
+          packages=$(echo "$outdated" | jq -r '.[] | .formula // .cask | select(. != null)')
+
+          if [ -z "$packages" ]; then
+            echo "No outdated packages"
             exit 0
           fi
-          
-          # Bump each outdated cask
-          for cask in $outdated_casks; do
-            echo "Bumping cask $cask..."
-            output=$(brew bump-cask-pr --no-browse --no-fork "$cask" 2>&1 || true)
-            echo "$output"
-            
-            # Extract PR number from output
-            pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
-            if [ -n "$pr_url" ]; then
-              pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
-              if [ -n "$pr_numbers" ]; then
-                pr_numbers="$pr_numbers $pr_number"
-              else
-                pr_numbers="$pr_number"
-              fi
-              echo "Created PR #$pr_number for cask $cask"
-            fi
-          done
-          
-          # Bump each outdated formula
-          for formula in $outdated_formulas; do
-            echo "Bumping formula $formula..."
-            output=$(brew bump-formula-pr --no-browse --no-fork "$formula" 2>&1 || true)
-            echo "$output"
-            
-            # Extract PR number from output
-            pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
-            if [ -n "$pr_url" ]; then
-              pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
-              if [ -n "$pr_numbers" ]; then
-                pr_numbers="$pr_numbers $pr_number"
-              else
-                pr_numbers="$pr_number"
-              fi
-              echo "Created PR #$pr_number for formula $formula"
-            fi
-          done
-          
-          # Output all PR numbers for auto-merge step (trim whitespace)
-          if [ -n "$pr_numbers" ]; then
-            pr_numbers=$(echo "$pr_numbers" | xargs)
-            echo "pr_numbers=$pr_numbers" >> $GITHUB_OUTPUT
-          fi
 
-      - name: Enable auto-merge
-        if: steps.bump.outputs.pr_numbers
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Enable auto-merge for all created PRs
-          for pr_number in ${{ steps.bump.outputs.pr_numbers }}; do
-            echo "Enabling auto-merge for PR #$pr_number"
-            gh pr merge "$pr_number" \
-              --auto \
-              --squash \
-              --delete-branch || echo "Failed to enable auto-merge for PR #$pr_number"
+          for pkg in $packages; do
+            echo "::group::Bumping $pkg"
+            brew bump --open-pr --no-fork "$pkg" || echo "Failed: $pkg"
+            echo "::endgroup::"
           done
