@@ -6,6 +6,8 @@ cask "calendr" do
   name "Calendr.app"
   homepage "https://github.com/pakerwreah/Calendr"
 
+  depends_on macos: ">= :sonoma"
+
   livecheck do
     url "https://github.com/pakerwreah/Calendr"
     strategy :github_releases
