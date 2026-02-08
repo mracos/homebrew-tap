@@ -10,9 +10,9 @@ cask "wacom-tablet-patched@5.3.7-6" do
   name "Wacom Bamboo Tablet"
   homepage "https://www.wacom.com/support/product-support/drivers"
 
+  # Pinned to driver version 5.3.7-6; patches tracked manually
   livecheck do
-    url "https://github.com/thenickdude/wacom-driver-fix"
-    strategy :github_releases
+    skip "Versioned cask pinned to driver 5.3.7-6"
   end
 
   pkg "Install-Wacom-Tablet-#{version.major_minor_patch}-patched.pkg"

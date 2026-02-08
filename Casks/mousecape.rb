@@ -7,8 +7,8 @@ cask "mousecape" do
   homepage "https://github.com/alexzielenski/Mousecape"
 
   livecheck do
-    url "https://github.com/alexzielenski/Mousecape"
-    strategy :github_releases
+    url :url
+    regex(/(\d+)\.zip/i)
   end
 
   app "Mousecape.app"
