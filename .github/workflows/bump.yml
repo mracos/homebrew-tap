@@ -61,6 +61,18 @@ jobs:
 
           echo "pr_urls=$pr_urls" >> "$GITHUB_OUTPUT"
 
+      - name: Trigger tests for PRs
+        if: steps.bump.outputs.pr_urls
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for pr_url in ${{ steps.bump.outputs.pr_urls }}; do
+            pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
+            head_branch=$(gh pr view "$pr_number" --json headRefName -q .headRefName)
+            echo "Triggering tests for $pr_url on branch $head_branch"
+            gh workflow run test.yml --ref "$head_branch"
+          done
+
       - name: Enable auto-merge
         if: steps.bump.outputs.pr_urls
         env:
