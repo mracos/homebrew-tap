@@ -1,0 +1,93 @@
+name: Bump one package
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        required: true
+        type: string
+      kind:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  bump-one:
+    runs-on: macos-latest
+    env:
+      HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      HOMEBREW_DEVELOPER: 1
+      PACKAGE: ${{ inputs.package }}
+      KIND: ${{ inputs.kind }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Configure git
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Bump package
+        id: bump
+        run: |
+          set -euo pipefail
+
+          echo "::group::Bumping $PACKAGE"
+          echo "Type: $KIND"
+          echo "Target version: $VERSION"
+
+          set +e
+          if [ "$KIND" = "formula" ]; then
+            output=$(brew bump-formula-pr --no-audit --no-browse --no-fork --version="$VERSION" "$PACKAGE" 2>&1)
+          else
+            output=$(brew bump-cask-pr --no-audit --no-browse --no-fork --version="$VERSION" "$PACKAGE" 2>&1)
+          fi
+          status=$?
+          set -e
+
+          echo "$output"
+
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Failed to bump $PACKAGE"
+            echo "::endgroup::"
+            exit 1
+          fi
+
+          pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
+          if [ -z "$pr_url" ]; then
+            echo "::error::No PR URL found for $PACKAGE"
+            echo "::endgroup::"
+            exit 1
+          fi
+
+          echo "Created: $pr_url"
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+          echo "::endgroup::"
+
+      - name: Trigger tests for PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          pr_url='${{ steps.bump.outputs.pr_url }}'
+          pr_number=$(echo "$pr_url" | grep -oE '[0-9]+$')
+          head_branch=$(gh pr view "$pr_number" --json headRefName -q .headRefName)
+          echo "Triggering tests for $pr_url on branch $head_branch"
+          gh workflow run test.yml --ref "$head_branch"
+
+      - name: Enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          pr_url='${{ steps.bump.outputs.pr_url }}'
+          echo "Enabling auto-merge for $pr_url"
+          gh pr merge "$pr_url" --auto --squash --delete-branch
