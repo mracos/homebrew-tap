@@ -1,0 +1,49 @@
+#!/bin/bash
+# Bump a formula's version and recompute sha256s.
+# Fallback for when `brew bump-formula-pr` can't handle #{version} interpolation.
+#
+# Usage: script/bump-formula <formula-file> <new-version>
+set -euo pipefail
+
+file="$1"
+version="$2"
+
+if [ ! -f "$file" ]; then
+  echo "File not found: $file" >&2
+  exit 1
+fi
+
+old_version=$(grep -m1 '^\s*version ' "$file" | sed 's/.*version "\(.*\)"/\1/')
+echo "Bumping $file: $old_version -> $version"
+
+# Update the version field
+sed -i '' "s/version \"${old_version}\"/version \"${version}\"/" "$file"
+
+# Recompute sha256 for each url that uses #{version} interpolation
+# Skip livecheck urls, API urls, and resource urls (e.g. skia)
+while IFS= read -r line; do
+  url_linenum=$(echo "$line" | cut -d: -f1)
+  sha_linenum=$((url_linenum + 1))
+
+  raw_url=$(sed -n "${url_linenum}p" "$file" | sed 's/.*url "\(.*\)"/\1/')
+
+  # Resolve #{version} patterns
+  resolved_url="$raw_url"
+  resolved_url=$(echo "$resolved_url" | sed "s/#{version}/${version}/g")
+
+  # Handle #{version.to_s.split(",")[N]} for comma-separated versions
+  if echo "$resolved_url" | grep -q '#{version'; then
+    IFS=',' read -ra parts <<< "$version"
+    for i in "${!parts[@]}"; do
+      resolved_url=$(echo "$resolved_url" | sed "s/#{version\.to_s\.split(\",\")\[$i\]}/${parts[$i]}/g")
+    done
+  fi
+
+  echo "Downloading: $resolved_url"
+  sha=$(curl -fsSL "$resolved_url" | shasum -a 256 | cut -d' ' -f1)
+  echo "  sha256: $sha"
+
+  sed -i '' "${sha_linenum}s/sha256 \"[a-f0-9]*\"/sha256 \"${sha}\"/" "$file"
+done < <(grep -n '^\s*url "' "$file" | grep -v 'livecheck\|api.github.com\|skia')
+
+echo "Done"
