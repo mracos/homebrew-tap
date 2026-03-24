@@ -37,21 +37,78 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
-      - name: Bump with brew
-        id: brew-bump
-        continue-on-error: true
+      - name: Resolve bump args
+        id: resolve
         run: |
           set -euo pipefail
 
           TAP_NAME="${GITHUB_REPOSITORY#*/}"
           TAP="${GITHUB_REPOSITORY_OWNER}/${TAP_NAME#homebrew-}"
-          QUALIFIED="${TAP}/${PACKAGE}"
+          echo "qualified=${TAP}/${PACKAGE}" >> "$GITHUB_OUTPUT"
 
-          echo "::group::brew bump $QUALIFIED to $VERSION"
+          # For formulas with comma-separated versions (e.g. aseprite "tag,asset"),
+          # resolve the URL and SHA so brew doesn't have to handle #{version.to_s.split}
           if [ "$KIND" = "formula" ]; then
-            output=$(brew bump-formula-pr --no-audit --no-browse --no-fork --version="$VERSION" "$QUALIFIED" 2>&1)
+            file="Formula/${PACKAGE}.rb"
           else
-            output=$(brew bump-cask-pr --no-audit --no-browse --no-fork --version="$VERSION" "$QUALIFIED" 2>&1)
+            file="Casks/${PACKAGE}.rb"
+          fi
+
+          if [ -f "$file" ] && grep -q 'version.to_s.split' "$file"; then
+            echo "Formula uses split version — resolving URL and SHA"
+            url_template=$(grep -m1 '^\s*url "' "$file" | sed 's/.*url "\(.*\)"/\1/')
+
+            resolved="$url_template"
+            resolved=$(echo "$resolved" | sed "s/#{version}/${VERSION}/g")
+
+            if echo "$resolved" | grep -q '#{version'; then
+              IFS=',' read -ra parts <<< "$VERSION"
+              for i in "${!parts[@]}"; do
+                resolved=$(echo "$resolved" | sed "s/#{version\.to_s\.split(\",\")\[$i\]}/${parts[$i]}/g")
+              done
+            fi
+
+            if echo "$resolved" | grep -q '#{'; then
+              echo "::error::Unresolved interpolation in URL: $resolved"
+              exit 1
+            fi
+
+            echo "Downloading $resolved to compute SHA..."
+            tmpfile=$(mktemp)
+            curl -fsSL "$resolved" -o "$tmpfile"
+            sha=$(shasum -a 256 "$tmpfile" | cut -d' ' -f1)
+            rm -f "$tmpfile"
+
+            echo "url=$resolved" >> "$GITHUB_OUTPUT"
+            echo "sha=$sha" >> "$GITHUB_OUTPUT"
+            echo "needs_url=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_url=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump with brew
+        id: brew-bump
+        env:
+          QUALIFIED: ${{ steps.resolve.outputs.qualified }}
+          NEEDS_URL: ${{ steps.resolve.outputs.needs_url }}
+          RESOLVED_URL: ${{ steps.resolve.outputs.url }}
+          RESOLVED_SHA: ${{ steps.resolve.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          args=(--no-audit --no-browse --no-fork)
+
+          if [ "$NEEDS_URL" = "true" ]; then
+            args+=(--url="$RESOLVED_URL" --sha256="$RESOLVED_SHA")
+          else
+            args+=(--version="$VERSION")
+          fi
+
+          echo "::group::brew bump $QUALIFIED"
+          if [ "$KIND" = "formula" ]; then
+            output=$(brew bump-formula-pr "${args[@]}" "$QUALIFIED" 2>&1)
+          else
+            output=$(brew bump-cask-pr "${args[@]}" "$QUALIFIED" 2>&1)
           fi
           echo "$output"
           echo "::endgroup::"
@@ -59,33 +116,10 @@ jobs:
           pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
           echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
 
-      - name: Fallback bump
-        id: fallback-bump
-        if: steps.brew-bump.outcome == 'failure'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          if [ "$KIND" = "cask" ]; then
-            file="Casks/${PACKAGE}.rb"
-          else
-            file="Formula/${PACKAGE}.rb"
-          fi
-
-          echo "::group::Fallback bump $PACKAGE to $VERSION"
-          ./script/bump-formula "$file" "$VERSION"
-          echo "::endgroup::"
-
-          git diff "$file"
-
-          pr_url=$(./script/create-bump-pr "$file" "$PACKAGE" "$VERSION")
-          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
-
       - name: Trigger tests for PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ steps.brew-bump.outputs.pr_url || steps.fallback-bump.outputs.pr_url }}
+          PR_URL: ${{ steps.brew-bump.outputs.pr_url }}
         run: |
           set -euo pipefail
           pr_number=$(echo "$PR_URL" | grep -oE '[0-9]+$')
@@ -96,7 +130,7 @@ jobs:
       - name: Enable auto-merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ steps.brew-bump.outputs.pr_url || steps.fallback-bump.outputs.pr_url }}
+          PR_URL: ${{ steps.brew-bump.outputs.pr_url }}
         run: |
           set -euo pipefail
           echo "Enabling auto-merge for $PR_URL"
