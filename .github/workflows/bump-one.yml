@@ -94,7 +94,7 @@ jobs:
           RESOLVED_URL: ${{ steps.resolve.outputs.url }}
           RESOLVED_SHA: ${{ steps.resolve.outputs.sha }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
 
           args=(--no-audit --no-browse --no-fork)
 
@@ -106,12 +106,17 @@ jobs:
 
           echo "::group::brew bump $QUALIFIED"
           if [ "$KIND" = "formula" ]; then
-            output=$(brew bump-formula-pr "${args[@]}" "$QUALIFIED" 2>&1)
+            output=$(brew bump-formula-pr "${args[@]}" "$QUALIFIED" 2>&1) || rc=$?
           else
-            output=$(brew bump-cask-pr "${args[@]}" "$QUALIFIED" 2>&1)
+            output=$(brew bump-cask-pr "${args[@]}" "$QUALIFIED" 2>&1) || rc=$?
           fi
           echo "$output"
           echo "::endgroup::"
+
+          if [ "${rc:-0}" -ne 0 ]; then
+            echo "::error::brew bump failed (exit ${rc})"
+            exit "$rc"
+          fi
 
           pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
           echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"

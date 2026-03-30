@@ -28,30 +28,66 @@ jobs:
         run: |
           set -euo pipefail
 
-          if ! outdated=$(brew livecheck --tap="$GITHUB_REPOSITORY" --newer-only --json 2>/dev/null); then
+          if ! results=$(brew livecheck --tap="$GITHUB_REPOSITORY" --json 2>/dev/null); then
             echo "::error::brew livecheck failed"
             exit 1
           fi
 
-          if ! echo "$outdated" | jq -e . >/dev/null; then
+          if ! echo "$results" | jq -e . >/dev/null 2>&1; then
             echo "::error::brew livecheck returned invalid JSON"
-            echo "$outdated"
+            echo "$results"
             exit 1
           fi
 
           echo "Livecheck output:"
-          echo "$outdated" | jq .
+          echo "$results" | jq .
 
-          matrix=$(echo "$outdated" | jq -c '[
+          # Write summary table
+          {
+            echo "## Discovery"
+            echo ""
+            echo "| Package | Type | Result |"
+            echo "|---------|------|--------|"
+            echo "$results" | jq -r '.[] |
+              (.formula // .cask // "unknown") as $name |
+              (if .formula then "formula" else "cask" end) as $type |
+              (
+                if (.status // "") == "error" then
+                  "❌ " + ((.messages // ["unknown error"])[0] | gsub("\\|"; "/"))
+                elif (.status // "") == "skipped" then
+                  "⏭️ skipped"
+                elif .version.latest != .version.current then
+                  "🆕 " + (.version.current // "?") + " → " + (.version.latest // "?")
+                else
+                  "✅ " + (.version.current // "?")
+                end
+              ) as $result |
+              "| " + $name + " | " + $type + " | " + $result + " |"'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Build matrix of outdated packages
+          matrix=$(echo "$results" | jq -c '[
             .[] |
+            select(
+              (.status // "") != "error" and
+              (.status // "") != "skipped" and
+              .version.latest != null and
+              .version.current != null and
+              .version.latest != .version.current
+            ) |
             {
               package: (.formula // .cask),
               kind: (if (.formula // empty) != "" then "formula" else "cask" end),
               version: .version.latest
             } |
-            select(.package != null and .version != null and .version != "")
+            select(.package != null and .version != "")
           ]')
           count=$(echo "$matrix" | jq 'length')
+
+          errors=$(echo "$results" | jq '[.[] | select((.status // "") == "error")] | length')
+          if [ "$errors" -gt 0 ]; then
+            echo "::warning::$errors package(s) had livecheck errors"
+          fi
 
           if [ "$count" -eq 0 ]; then
             echo "No outdated packages"
