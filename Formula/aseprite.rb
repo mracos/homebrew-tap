@@ -3,15 +3,15 @@ class Aseprite < Formula
   homepage "https://github.com/aseprite/aseprite"
   # Aseprite has mismatched tag/asset versions, e.g. tag v1.3.16 -> Aseprite-v1.3.16.1-Source.zip
   # Version format: "tag,asset_version" - both needed to construct download URL
-  version "1.3.16,1.3.16.1"
   url "https://github.com/aseprite/aseprite/releases/download/v#{version.to_s.split(",")[0]}/Aseprite-v#{version.to_s.split(",")[1]}-Source.zip"
+  version "1.3.16,1.3.16.1"
   sha256 "8961e7cff572f7bd432c240be5214c9dd228d4bb582521a44ff554f011de551a"
   license :cannot_represent
   head "https://github.com/aseprite/aseprite.git", branch: "main"
 
   livecheck do
-    url "https://api.github.com/repos/aseprite/aseprite/releases?per_page=10"
-    strategy :json do |json|
+    url :homepage
+    strategy :github_releases do |json, _regex|
       json.filter_map do |release|
         next if release["prerelease"] || release["draft"]
         next if release["tag_name"]&.include?("beta")
@@ -24,7 +24,7 @@ class Aseprite < Formula
         next if asset_version.blank?
 
         "#{tag},#{asset_version}"
-      end.first
+      end
     end
   end
 
