@@ -1,30 +1,30 @@
 class Gws < Formula
   desc "Google Workspace CLI for Drive, Gmail, Calendar, Sheets, Docs, Chat, Admin"
   homepage "https://github.com/googleworkspace/cli"
-  version "0.11.1"
+  version "0.22.3"
   license "Apache-2.0"
 
   on_macos do
     on_arm do
-      url "https://github.com/googleworkspace/cli/releases/download/v#{version}/gws-aarch64-apple-darwin.tar.gz"
-      sha256 "45be34945091dde65384497919ec19d6babbadc669ac1067252a11704feb5073"
+      url "https://github.com/googleworkspace/cli/releases/download/v0.22.3/google-workspace-cli-aarch64-apple-darwin.tar.gz"
+      sha256 "3e56ae8005bf33ec14ba3ef1541792b267ef0b6de6c344573eac19457e396d99"
     end
 
     on_intel do
-      url "https://github.com/googleworkspace/cli/releases/download/v#{version}/gws-x86_64-apple-darwin.tar.gz"
-      sha256 "24a3d14a745e78f4a4ae6bf9a2b1862cfc4786629c3efb6324a5ffce4fbfb644"
+      url "https://github.com/googleworkspace/cli/releases/download/v0.22.3/google-workspace-cli-x86_64-apple-darwin.tar.gz"
+      sha256 "ccb477ceeb75ad301d780692224a61678cbba85251b7dc074fc67e94527f94cd"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/googleworkspace/cli/releases/download/v#{version}/gws-aarch64-unknown-linux-gnu.tar.gz"
-      sha256 "27d2e70b967d656b319d088aae7e40a1fbd6f87ccf497c8fc62cb52b3689d3ab"
+      url "https://github.com/googleworkspace/cli/releases/download/v0.22.3/google-workspace-cli-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "4cddeb0dff1e0b45023c63915a2d46affe3689b7332a862f913b395e604d4ce1"
     end
 
     on_intel do
-      url "https://github.com/googleworkspace/cli/releases/download/v#{version}/gws-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "769118e1aa1041bbdaa2e9ee5fe1ca0165d6675d2b931aaae40681a752d86064"
+      url "https://github.com/googleworkspace/cli/releases/download/v0.22.3/google-workspace-cli-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "b951ef847b38dd41a23d31a3aeaf3cb650421aac607bbfe63727bf4f4213ce44"
     end
   end
 
