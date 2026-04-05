@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if ! results=$(brew livecheck --tap="$GITHUB_REPOSITORY" --json 2>/dev/null); then
+          if ! results=$(brew livecheck --tap="$GITHUB_REPOSITORY" --json); then
             echo "::error::brew livecheck failed"
             exit 1
           fi
