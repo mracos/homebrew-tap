@@ -7,6 +7,7 @@ class Euporie < Formula
   sha256 "e80774a0e6f081f47e84249eca18c04237169ba967609985a482e1db0101e88b"
   license "MIT"
 
+  depends_on "libyaml"
   depends_on "pillow"
   depends_on "python@3.12"
 
