@@ -17,6 +17,7 @@ permissions:
   contents: write
   pull-requests: write
   actions: write
+  statuses: write
 
 jobs:
   bump-one:
@@ -37,72 +38,29 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
-      - name: Resolve bump args
+      - name: Resolve package info
         id: resolve
         run: |
           set -euo pipefail
-
           TAP_NAME="${GITHUB_REPOSITORY#*/}"
           TAP="${GITHUB_REPOSITORY_OWNER}/${TAP_NAME#homebrew-}"
           echo "qualified=${TAP}/${PACKAGE}" >> "$GITHUB_OUTPUT"
 
-          # For formulas with comma-separated versions (e.g. aseprite "tag,asset"),
-          # resolve the URL and SHA so brew doesn't have to handle #{version.to_s.split}
           if [ "$KIND" = "formula" ]; then
-            file="Formula/${PACKAGE}.rb"
+            echo "file=Formula/${PACKAGE}.rb" >> "$GITHUB_OUTPUT"
           else
-            file="Casks/${PACKAGE}.rb"
-          fi
-
-          if [ -f "$file" ] && grep -q 'version.to_s.split' "$file"; then
-            echo "Formula uses split version — resolving URL and SHA"
-            url_template=$(grep -m1 '^\s*url "' "$file" | sed 's/.*url "\(.*\)"/\1/')
-
-            resolved="$url_template"
-            resolved=$(echo "$resolved" | sed "s/#{version}/${VERSION}/g")
-
-            if echo "$resolved" | grep -q '#{version'; then
-              IFS=',' read -ra parts <<< "$VERSION"
-              for i in "${!parts[@]}"; do
-                resolved=$(echo "$resolved" | sed "s/#{version\.to_s\.split(\",\")\[$i\]}/${parts[$i]}/g")
-              done
-            fi
-
-            if echo "$resolved" | grep -q '#{'; then
-              echo "::error::Unresolved interpolation in URL: $resolved"
-              exit 1
-            fi
-
-            echo "Downloading $resolved to compute SHA..."
-            tmpfile=$(mktemp)
-            curl -fsSL "$resolved" -o "$tmpfile"
-            sha=$(shasum -a 256 "$tmpfile" | cut -d' ' -f1)
-            rm -f "$tmpfile"
-
-            echo "url=$resolved" >> "$GITHUB_OUTPUT"
-            echo "sha=$sha" >> "$GITHUB_OUTPUT"
-            echo "needs_url=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "needs_url=false" >> "$GITHUB_OUTPUT"
+            echo "file=Casks/${PACKAGE}.rb" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Bump with brew
         id: brew-bump
+        continue-on-error: true
         env:
           QUALIFIED: ${{ steps.resolve.outputs.qualified }}
-          NEEDS_URL: ${{ steps.resolve.outputs.needs_url }}
-          RESOLVED_URL: ${{ steps.resolve.outputs.url }}
-          RESOLVED_SHA: ${{ steps.resolve.outputs.sha }}
         run: |
           set -uo pipefail
 
-          args=(--no-audit --no-browse --no-fork)
-
-          if [ "$NEEDS_URL" = "true" ]; then
-            args+=(--url="$RESOLVED_URL" --sha256="$RESOLVED_SHA")
-          else
-            args+=(--version="$VERSION")
-          fi
+          args=(--no-audit --no-browse --no-fork --version="$VERSION")
 
           echo "::group::brew bump $QUALIFIED"
           if [ "$KIND" = "formula" ]; then
@@ -114,28 +72,106 @@ jobs:
           echo "::endgroup::"
 
           if [ "${rc:-0}" -ne 0 ]; then
-            echo "::error::brew bump failed (exit ${rc})"
+            echo "::warning::brew bump failed (exit ${rc}), will try manual bump"
             exit "$rc"
           fi
 
           pr_url=$(echo "$output" | grep -oE 'https://github.com/[^/]+/[^/]+/pull/[0-9]+' | head -1)
+          if [ -z "$pr_url" ]; then
+            echo "::error::brew bump succeeded but could not extract PR URL"
+            exit 1
+          fi
           echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
 
-      - name: Trigger tests for PR
+      - name: Manual bump (fallback)
+        if: steps.brew-bump.outcome == 'failure'
+        id: manual-bump
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ steps.brew-bump.outputs.pr_url }}
+          FILE: ${{ steps.resolve.outputs.file }}
         run: |
           set -euo pipefail
+
+          # Clean up any partial state from brew attempt
+          git checkout master 2>/dev/null || true
+          git clean -fd 2>/dev/null || true
+
+          branch="bump/${PACKAGE}/${VERSION}"
+          git checkout -b "$branch"
+
+          ruby scripts/manual-bump.rb "$FILE" "$VERSION"
+
+          git add "$FILE"
+          git commit -m "${PACKAGE} ${VERSION}"
+          git push -u origin "$branch"
+
+          pr_url=$(gh pr create \
+            --title "${PACKAGE} ${VERSION}" \
+            --body "Bump ${PACKAGE} to ${VERSION}" \
+            --base master)
+
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Test formula
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ steps.brew-bump.outputs.pr_url || steps.manual-bump.outputs.pr_url }}
+        run: |
+          set -uo pipefail
+
           pr_number=$(echo "$PR_URL" | grep -oE '[0-9]+$')
-          head_branch=$(gh pr view "$pr_number" --json headRefName -q .headRefName)
-          echo "Triggering tests for $PR_URL on branch $head_branch"
-          gh workflow run test.yml --ref "$head_branch"
+          head_sha=$(gh pr view "$pr_number" --json headRefOid -q .headRefOid)
+          pr_branch=$(gh pr view "$pr_number" --json headRefName -q .headRefName)
+
+          # Ensure we're on the PR branch so brew reads the updated formula
+          git fetch origin "$pr_branch"
+          git checkout "$pr_branch"
+
+          conclusion="success"
+          summary=""
+
+          # brew audit --online checks URLs which can fail transiently, so retry once
+          echo "::group::brew audit"
+          if ! audit_output=$(brew audit --online --git --skip-style "$PACKAGE" 2>&1); then
+            echo "$audit_output"
+            echo "::warning::brew audit failed, retrying in 10s..."
+            sleep 10
+            if ! audit_output=$(brew audit --online --git --skip-style "$PACKAGE" 2>&1); then
+              conclusion="failure"
+              summary="brew audit failed"
+            fi
+          fi
+          echo "$audit_output"
+          echo "::endgroup::"
+
+          echo "::group::brew style"
+          if ! style_output=$(brew style "$PACKAGE" 2>&1); then
+            conclusion="failure"
+            summary="${summary:+$summary; }brew style failed"
+          fi
+          echo "$style_output"
+          echo "::endgroup::"
+
+          [ "$conclusion" = "success" ] && summary="All checks passed"
+
+          # Post commit status so branch protection is satisfied
+          [ "$conclusion" = "success" ] && state="success" || state="failure"
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/$head_sha" \
+            --method POST \
+            -f state="$state" \
+            -f context="test" \
+            -f description="$summary for $PACKAGE $VERSION"
+
+          if [ "$conclusion" = "failure" ]; then
+            echo "::error::Tests failed: $summary"
+            exit 1
+          fi
 
       - name: Enable auto-merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ steps.brew-bump.outputs.pr_url }}
+          PR_URL: ${{ steps.brew-bump.outputs.pr_url || steps.manual-bump.outputs.pr_url }}
         run: |
           set -euo pipefail
           echo "Enabling auto-merge for $PR_URL"
