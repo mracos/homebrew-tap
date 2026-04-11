@@ -17,3 +17,9 @@ brew audit --online --git --skip-style <name>
 Where `<name>` is the formula/cask name (e.g. `toastty`, `gws`).
 
 To lint everything: `brew style mracos/homebrew-tap`
+
+## Tests
+
+```bash
+ruby test/scripts/manual_bump_test.rb
+```
