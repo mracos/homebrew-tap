@@ -112,7 +112,15 @@ jobs:
           git checkout master 2>/dev/null || true
           git clean -fd 2>/dev/null || true
 
+          # Re-set auth after cleanup (brew bump can disrupt git credentials)
+          git config "http.https://github.com/.extraheader" \
+            "AUTHORIZATION: basic $(echo -n "x-access-token:${GH_TOKEN}" | base64)"
+
           branch="bump/${PACKAGE}/${VERSION}"
+
+          # Delete stale remote branch from previous failed runs
+          git push origin --delete "$branch" 2>/dev/null || true
+
           git checkout -b "$branch"
 
           ruby scripts/manual-bump.rb "$FILE" "$VERSION"
