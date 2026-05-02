@@ -19,7 +19,7 @@ jobs:
       has_updates: ${{ steps.discover.outputs.has_updates }}
       matrix: ${{ steps.discover.outputs.matrix }}
     steps:
-      - uses: Homebrew/actions/setup-homebrew@master
+      - uses: Homebrew/actions/setup-homebrew@main
 
       - name: Discover outdated packages
         id: discover
