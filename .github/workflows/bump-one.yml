@@ -52,6 +52,22 @@ jobs:
             echo "file=Casks/${PACKAGE}.rb" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Clean stale branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          # Delete leftover remote branches from previous failed bump attempts
+          for pattern in "bump-${PACKAGE}-${VERSION}" "bump/${PACKAGE}/${VERSION}"; do
+            git push origin --delete "$pattern" 2>/dev/null || true
+          done
+          # Close any orphaned PRs for this exact version
+          gh pr list --search "${PACKAGE} ${VERSION} in:title" --state open --json number -q '.[].number' | \
+            while read -r pr; do
+              echo "Closing stale PR #${pr}"
+              gh pr close "$pr" --delete-branch 2>/dev/null || true
+            done
+
       - name: Bump with brew
         id: brew-bump
         continue-on-error: true
