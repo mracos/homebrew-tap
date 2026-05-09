@@ -5,8 +5,8 @@ class Abtop < Formula
 
   if OS.mac?
     if Hardware::CPU.arm?
-      url "https://github.com/graykode/abtop/releases/download/v0.4.0/abtop-aarch64-apple-darwin.tar.xz"
-      sha256 "7ae9686ad3a527ee42e7ef798be86d6044ab3e95fa493cba261ca03fb8544506"
+      url "https://github.com/graykode/abtop/releases/download/v0.4.3/abtop-aarch64-apple-darwin.tar.xz"
+      sha256 "4bf1d814c810f89db4b42e4be1a24f105135a6b7e7bf66c4f0902525b5eb3974"
     end
     if Hardware::CPU.intel?
       url "https://github.com/graykode/abtop/releases/download/v0.2.12/abtop-x86_64-apple-darwin.tar.xz"
