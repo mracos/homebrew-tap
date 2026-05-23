@@ -1,6 +1,6 @@
 cask "toastty" do
-  version "0.6.5"
-  sha256 "53430ae2dfa416ebd8f6886169fbd6b2c50e3a95efec09e8960e464e1608ba30"
+  version "0.6.7"
+  sha256 "ee33d95c179f510c904284fa5a52b76608b71ad36723f6505875a6c92b245b3e"
 
   url "https://github.com/figelwump/toastty/releases/download/v#{version}/Toastty-#{version}.dmg"
   name "Toastty"
@@ -12,7 +12,7 @@ cask "toastty" do
     strategy :github_latest
   end
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Toastty.app"
 end
