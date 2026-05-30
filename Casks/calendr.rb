@@ -1,6 +1,6 @@
 cask "calendr" do
-  version "1.20.7"
-  sha256 "3f1805577540a11a2f03030eb25b9023b32925e30cc1cbc76eac253aad3c67f6"
+  version "1.20.9"
+  sha256 "328520d72663d4c18a294745edc1df0ce9011cf7f8b857c8ea6afa5409960e1a"
 
   url "https://github.com/pakerwreah/Calendr/releases/download/v#{version}/Calendr.zip"
   name "Calendr.app"
@@ -11,7 +11,7 @@ cask "calendr" do
     strategy :github_releases
   end
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Calendr.app"
 end
