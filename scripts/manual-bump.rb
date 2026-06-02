@@ -69,11 +69,14 @@ class ManualBump
 
   def find_versioned_urls(lines, current_version)
     entries = []
+    current_parts = current_version.split(",")
     lines.each_with_index do |line, i|
       next unless line =~ /^\s*url "(.*)"/
 
       url_str = $1
-      next unless url_str.include?(current_version) || url_str.include?('#{version')
+      next unless url_str.include?(current_version) ||
+                  url_str.include?('#{version') ||
+                  current_parts.any? { |p| url_str.include?(p) }
 
       entries << { index: i, url: url_str }
     end
@@ -87,6 +90,21 @@ class ManualBump
 
     parts = new_version.split(",")
     resolved.gsub!(/\#\{version\.to_s\.split\(","\)\[(\d+)\]\}/) { parts[Regexp.last_match(1).to_i] }
+
+    # Literal split-version URLs (e.g. `.../v1.3.16/App-v1.3.16.1-Source.zip` with
+    # current_version "1.3.16,1.3.16.1"). Replace longest old part first so a shorter
+    # component (e.g. "1.3.16") doesn't corrupt a longer one (e.g. "1.3.16.1").
+    if current_version.include?(",") && !url_str.include?('#{')
+      old_parts = current_version.split(",")
+      if old_parts.length == parts.length
+        old_parts.zip(parts).sort_by { |old, _| -old.length }.each do |old_part, new_part|
+          next if old_part == new_part
+
+          resolved = resolved.gsub(old_part, new_part)
+        end
+      end
+    end
+
     resolved
   end
 

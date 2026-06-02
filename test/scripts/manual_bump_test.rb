@@ -113,6 +113,33 @@ class ManualBumpTest < Minitest::Test
     assert_equal "https://example.com/v1.3.17/App-v1.3.17.zip", resolved
   end
 
+  # --- URL resolution: literal split-version (aseprite pattern) ---
+
+  def test_resolves_literal_split_version_components
+    mb, _file = bumper("", new_version: "1.3.17.2,1.3.17.2")
+    url = "https://example.com/v1.3.16/App-v1.3.16.1-Source.zip"
+
+    resolved = mb.resolve_url(url, "1.3.16,1.3.16.1")
+
+    assert_equal "https://example.com/v1.3.17.2/App-v1.3.17.2-Source.zip", resolved
+  end
+
+  def test_updates_literal_split_version_url_in_formula
+    content = <<~RUBY
+      class Aseprite < Formula
+        url "https://example.com/v1.3.16/App-v1.3.16.1-Source.zip"
+        version "1.3.16,1.3.16.1"
+        sha256 "#{OLD_SHA}"
+      end
+    RUBY
+
+    result = bump(content, new_version: "1.3.17.2,1.3.17.2")
+
+    assert_includes result, "v1.3.17.2/App-v1.3.17.2-Source.zip"
+    refute_includes result, "1.3.16"
+    assert_includes result, "sha256 \"#{FAKE_SHA}\""
+  end
+
   # --- SHA256: forward search (formula pattern) ---
 
   def test_updates_sha256_after_url_in_formula
