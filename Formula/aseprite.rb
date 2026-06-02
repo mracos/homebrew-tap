@@ -1,9 +1,9 @@
 class Aseprite < Formula
   desc "Animated sprite editor and pixel art tool built from source"
   homepage "https://github.com/aseprite/aseprite"
-  # Aseprite has mismatched tag/asset versions, e.g. tag v1.3.16 -> Aseprite-v1.3.16.1-Source.zip
-  # Version format: "tag,asset_version" - both needed to construct download URL
-  url "https://github.com/aseprite/aseprite/releases/download/v#{version.to_s.split(",")[0]}/Aseprite-v#{version.to_s.split(",")[1]}-Source.zip"
+  # Aseprite has mismatched tag/asset versions, e.g. tag v1.3.16 -> Aseprite-v1.3.16.1-Source.zip.
+  # Version is stored as "tag,asset" so both halves can drive the download URL.
+  url "https://github.com/aseprite/aseprite/releases/download/v1.3.17.2/Aseprite-v1.3.17.2-Source.zip"
   version "1.3.17.2,1.3.17.2"
   sha256 "3895afca60608e86ffbba20c32af95a6e59f8d7ebe6d2617236f159b42176bfe"
   license :cannot_represent
