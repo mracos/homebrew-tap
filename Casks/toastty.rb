@@ -1,6 +1,6 @@
 cask "toastty" do
-  version "0.6.8"
-  sha256 "4561afee3a95d5a99cdccacc2daa2a156484495aaab81adb3d4179d0ddccc582"
+  version "0.6.10"
+  sha256 "f50b3035ff76d2618ebc4a47714fd9a7119f0b37d0f2561befe37ba5cda2bcb7"
 
   url "https://github.com/figelwump/toastty/releases/download/v#{version}/Toastty-#{version}.dmg"
   name "Toastty"
