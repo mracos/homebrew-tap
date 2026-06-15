@@ -14,7 +14,7 @@ cask "aseprite-trial" do
 
   auto_updates false
   conflicts_with cask: "aseprite"
-  depends_on macos: ">= :big_sur"
+  depends_on macos: :big_sur
 
   app "Aseprite.app"
 
