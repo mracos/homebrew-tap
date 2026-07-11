@@ -1,30 +1,30 @@
 class MermaidAscii < Formula
   desc "Render mermaid diagrams as ASCII art in the terminal"
   homepage "https://github.com/AlexanderGrooff/mermaid-ascii"
-  version "1.3.0"
+  version "1.4.0"
   license "MIT"
 
   on_macos do
     on_arm do
-      url "https://github.com/AlexanderGrooff/mermaid-ascii/releases/download/1.3.0/mermaid-ascii_Darwin_arm64.tar.gz"
-      sha256 "37e54a460489749451ef3818519eeff1087d3d7452bc50fcc639f8d2665e7b51"
+      url "https://github.com/AlexanderGrooff/mermaid-ascii/releases/download/1.4.0/mermaid-ascii_Darwin_arm64.tar.gz"
+      sha256 "bdaa335ac574828645ac22bc381460f55c0170a3bb1c3f9037df986fa31bec57"
     end
 
     on_intel do
-      url "https://github.com/AlexanderGrooff/mermaid-ascii/releases/download/1.3.0/mermaid-ascii_Darwin_x86_64.tar.gz"
-      sha256 "bcfec90bba16aec2da40b7075e5273a469a389bd674568dfb99f36f932c90a6b"
+      url "https://github.com/AlexanderGrooff/mermaid-ascii/releases/download/1.4.0/mermaid-ascii_Darwin_x86_64.tar.gz"
+      sha256 "f718ec6e186952803a9fd06d84307c108208877576534b65fc57fbb5ec2fd9d9"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/AlexanderGrooff/mermaid-ascii/releases/download/1.3.0/mermaid-ascii_Linux_arm64.tar.gz"
-      sha256 "a6f4c84f634c6bec511d655faae944be330d2ad60f1001ee2ef3dd5594e26ad3"
+      url "https://github.com/AlexanderGrooff/mermaid-ascii/releases/download/1.4.0/mermaid-ascii_Linux_arm64.tar.gz"
+      sha256 "b256faf57feea83058a4bfcdedffd60a3724c47b7d2f096207c7a55f51d387d5"
     end
 
     on_intel do
-      url "https://github.com/AlexanderGrooff/mermaid-ascii/releases/download/1.3.0/mermaid-ascii_Linux_x86_64.tar.gz"
-      sha256 "1db750ef1d4e393d6c914966ac82ae10e6757236586028d10a55b1001f49bf1a"
+      url "https://github.com/AlexanderGrooff/mermaid-ascii/releases/download/1.4.0/mermaid-ascii_Linux_x86_64.tar.gz"
+      sha256 "a59974c74e3fddfd040f80618a0f7eae535ebe58d91aa1d8d876bc99815dc037"
     end
   end
 
