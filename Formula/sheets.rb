@@ -1,13 +1,13 @@
 class Sheets < Formula
   desc "Terminal spreadsheet editor with vim-like keybindings"
   homepage "https://github.com/maaslalani/sheets"
-  version "0.2.0"
+  version "0.3.0"
   license "MIT"
 
   on_macos do
     on_arm do
-      url "https://github.com/maaslalani/sheets/releases/download/v0.2.0/sheets_Darwin_arm64.tar.gz"
-      sha256 "4e8ea6d976cb9b5b59ce4f6e0ee30f4be77e71c7abc9b215dee9252042ed993f"
+      url "https://github.com/maaslalani/sheets/releases/download/v0.3.0/sheets_Darwin_arm64.tar.gz"
+      sha256 "7de3ca5f0742c0ee98e09e8773b4d407d7ba6272135cba2d829ed57b9c0451ec"
     end
 
     on_intel do
