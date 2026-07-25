@@ -3,9 +3,9 @@ class Aseprite < Formula
   homepage "https://github.com/aseprite/aseprite"
   # Aseprite has mismatched tag/asset versions, e.g. tag v1.3.16 -> Aseprite-v1.3.16.1-Source.zip.
   # Version is stored as "tag,asset" so both halves can drive the download URL.
-  url "https://github.com/aseprite/aseprite/releases/download/v1.3.17.2/Aseprite-v1.3.17.2-Source.zip"
-  version "1.3.17.2,1.3.17.2"
-  sha256 "3895afca60608e86ffbba20c32af95a6e59f8d7ebe6d2617236f159b42176bfe"
+  url "https://github.com/aseprite/aseprite/releases/download/v1.3.18/Aseprite-v1.3.18-Source.zip"
+  version "1.3.18,1.3.18"
+  sha256 "064ed2811ff216e233a04334d0ac27c319171ba32f9c7fbe3d7bbacece8bceaa"
   license :cannot_represent
   head "https://github.com/aseprite/aseprite.git", branch: "main"
 
