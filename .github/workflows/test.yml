@@ -11,7 +11,8 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # macos-latest: cask audits parse the app's Info.plist with plutil, which is macOS-only
+    runs-on: macos-latest
     steps:
       - name: Set up Homebrew
         id: set-up-homebrew
