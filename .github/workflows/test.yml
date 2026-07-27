@@ -18,6 +18,19 @@ jobs:
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master
 
+      # setup-homebrew checks out GITHUB_SHA (the PR merge ref), which lags
+      # behind pushes and can resolve to the base branch. Force the tap to the
+      # exact PR head so audits run against the committed formula/cask.
+      - name: Sync tap to PR head
+        if: github.event_name == 'pull_request'
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          tap="$(brew --repository mracos/tap)"
+          git -C "$tap" fetch --depth=1 origin "$HEAD_SHA"
+          git -C "$tap" checkout --force --detach "$HEAD_SHA"
+          git -C "$tap" log --oneline -1
+
       - name: Cache Homebrew Bundler RubyGems
         id: cache
         uses: actions/cache@v3
