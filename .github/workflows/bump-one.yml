@@ -61,10 +61,14 @@ jobs:
           for pattern in "bump-${PACKAGE}-${VERSION}" "bump/${PACKAGE}/${VERSION}"; do
             git push origin --delete "$pattern" 2>/dev/null || true
           done
-          # Close any orphaned PRs for this exact version
-          gh pr list --search "${PACKAGE} ${VERSION} in:title" --state open --json number -q '.[].number' | \
+          # Close any open bump PR for this package, regardless of version.
+          # The discover job always targets the latest version, so a fresh run
+          # supersedes older stragglers (e.g. a 1.22.4 PR left open when we bump
+          # to 1.22.5) that would otherwise pile up and go stale against livecheck.
+          gh pr list --state open --json number,title \
+            -q ".[] | select(.title | startswith(\"${PACKAGE} \")) | .number" | \
             while read -r pr; do
-              echo "Closing stale PR #${pr}"
+              echo "Closing superseded PR #${pr}"
               gh pr close "$pr" --delete-branch 2>/dev/null || true
             done
 

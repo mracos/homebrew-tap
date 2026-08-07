@@ -10,8 +10,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  audit:
+    # Formulae audit fine on Linux; casks read Info.plist via `plutil` (macOS-only),
+    # so route each kind to the cheapest runner that can audit it.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - kind: formula
+            dir: Formula
+            os: ubuntu-latest
+          - kind: cask
+            dir: Casks
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Set up Homebrew
         id: set-up-homebrew
@@ -34,8 +46,7 @@ jobs:
         uses: tj-actions/changed-files@v46
         with:
           files: |
-            Casks/**
-            Formula/**
+            ${{ matrix.dir }}/**
 
       - name: Run brew audit
         if: steps.changed-files.outputs.any_changed == 'true'
@@ -80,3 +91,19 @@ jobs:
               fi
             done
           done
+
+  # Stable required-check gate: branch protection requires "test", and bump-one.yml
+  # posts a "test" commit status to match. Keep a single job named `test` that only
+  # passes when both audit legs pass, regardless of which kinds a PR actually touched.
+  test:
+    needs: audit
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Gate on audit result
+        run: |
+          if [ "${{ needs.audit.result }}" != "success" ]; then
+            echo "audit did not succeed: ${{ needs.audit.result }}"
+            exit 1
+          fi
+          echo "All audit legs passed"
