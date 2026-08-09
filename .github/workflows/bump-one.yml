@@ -12,6 +12,19 @@ on:
       version:
         required: true
         type: string
+  # Also dispatchable for a single package. The stale handler below re-dispatches
+  # this workflow when upstream releases a newer version mid-bump.
+  workflow_dispatch:
+    inputs:
+      package:
+        required: true
+        type: string
+      kind:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -141,6 +154,7 @@ jobs:
           echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
 
       - name: Test formula
+        id: test
         timeout-minutes: 5
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -159,20 +173,52 @@ jobs:
           conclusion="success"
           summary=""
 
+          # A "differs from ... retrieved by livecheck" problem means upstream shipped
+          # a newer release after discover picked this version. That's the only audit
+          # problem we treat specially: this PR can't be salvaged, so we close it and
+          # re-bump at the new version. Every other audit problem is a real failure.
+          audit_real_problems() {
+            echo "$1" | grep -E '^[[:space:]]+[-*] ' | \
+              grep -vE 'differs from .+ retrieved by livecheck' || true
+          }
+
           # brew audit --online checks URLs which can fail transiently, so retry once
+          # (but only when there are real problems; a stale-version diff won't heal).
           echo "::group::brew audit"
-          if ! audit_output=$(brew audit --online --git --skip-style "$PACKAGE" 2>&1); then
-            echo "$audit_output"
+          audit_output=$(brew audit --online --git --skip-style "$PACKAGE" 2>&1) || true
+          echo "$audit_output"
+          if [ -n "$(audit_real_problems "$audit_output")" ]; then
             echo "::warning::brew audit failed, retrying in 10s..."
             sleep 10
-            if ! audit_output=$(brew audit --online --git --skip-style "$PACKAGE" 2>&1); then
-              conclusion="failure"
-              summary="brew audit failed"
-            fi
+            audit_output=$(brew audit --online --git --skip-style "$PACKAGE" 2>&1) || true
+            echo "$audit_output"
           fi
-          echo "$audit_output"
           echo "::endgroup::"
 
+          if [ -n "$(audit_real_problems "$audit_output")" ]; then
+            conclusion="failure"
+            summary="brew audit failed"
+          fi
+
+          # Stale: close this PR and dispatch a fresh bump at the newer version.
+          # No point running style on a PR we're about to discard.
+          if [ "$conclusion" = "success" ] && \
+             echo "$audit_output" | grep -qE 'differs from .+ retrieved by livecheck'; then
+            new_version=$(echo "$audit_output" \
+              | grep -oE "differs from '[^']+' retrieved by livecheck" \
+              | head -1 | sed -E "s/.*from '([^']+)'.*/\1/")
+            echo "::warning::${PACKAGE} ${VERSION} is stale; upstream is at ${new_version}."
+            gh pr close "$pr_number" --comment "Superseded: upstream released ${new_version}." --delete-branch 2>/dev/null || true
+            if [ -n "$new_version" ] && [ "$new_version" != "$VERSION" ]; then
+              gh workflow run bump-one.yml \
+                -f package="$PACKAGE" -f kind="$KIND" -f version="$new_version"
+              echo "::notice::Dispatched fresh bump for ${PACKAGE} ${new_version}"
+            fi
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # brew style blocks the bump: style must not degrade on master.
           echo "::group::brew style"
           if ! style_output=$(brew style "$PACKAGE" 2>&1); then
             conclusion="failure"
@@ -197,6 +243,7 @@ jobs:
           fi
 
       - name: Enable auto-merge
+        if: steps.test.outputs.stale != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ steps.brew-bump.outputs.pr_url || steps.manual-bump.outputs.pr_url }}
