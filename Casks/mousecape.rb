@@ -8,8 +8,15 @@ cask "mousecape" do
 
   livecheck do
     url :url
-    regex(/(\d+)\.zip/i)
+    strategy :github_latest
+    regex(/^v?(\d+(?:\.\d+)*)$/i)
   end
 
+  depends_on :macos
+
   app "Mousecape.app"
+
+  caveats do
+    requires_rosetta
+  end
 end
