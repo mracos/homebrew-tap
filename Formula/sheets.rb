@@ -6,25 +6,25 @@ class Sheets < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/maaslalani/sheets/releases/download/v0.3.0/sheets_Darwin_arm64.tar.gz"
+      url "https://github.com/maaslalani/sheets/releases/download/v#{version}/sheets_Darwin_arm64.tar.gz"
       sha256 "7de3ca5f0742c0ee98e09e8773b4d407d7ba6272135cba2d829ed57b9c0451ec"
     end
 
     on_intel do
-      url "https://github.com/maaslalani/sheets/releases/download/v0.1.0/sheets_Darwin_x86_64.tar.gz"
-      sha256 "54ae46288e4dbd51ee6c2976b7ee8a20e7545f08ab206dc8f14a19382bdb3ebe"
+      url "https://github.com/maaslalani/sheets/releases/download/v#{version}/sheets_Darwin_x86_64.tar.gz"
+      sha256 "3d80fd6e6ca2316d3ea09617bb378829a631395f45aa9a16b46fad4fe44c1f3a"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/maaslalani/sheets/releases/download/v0.1.0/sheets_Linux_arm64.tar.gz"
-      sha256 "516ef9f6c562383d4f54cf4253206dfc8e6703c6652cf7c9c16637e8821e9da7"
+      url "https://github.com/maaslalani/sheets/releases/download/v#{version}/sheets_Linux_arm64.tar.gz"
+      sha256 "22d615cbab83a81a94d6e70fa212d0218f9a2b2de50185aff8814acd46b376aa"
     end
 
     on_intel do
-      url "https://github.com/maaslalani/sheets/releases/download/v0.1.0/sheets_Linux_x86_64.tar.gz"
-      sha256 "f6a87faacea136a5c7ea53d760b5d8262cb533c9b91c060124404bee964b2aef"
+      url "https://github.com/maaslalani/sheets/releases/download/v#{version}/sheets_Linux_x86_64.tar.gz"
+      sha256 "24369b958de79989832da49cc25bf00fafb0f5bf0119761ea3dbbbfa2a75edaf"
     end
   end
 
