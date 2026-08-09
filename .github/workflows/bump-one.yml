@@ -159,6 +159,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ steps.brew-bump.outputs.pr_url || steps.manual-bump.outputs.pr_url }}
+          QUALIFIED: ${{ steps.resolve.outputs.qualified }}
         run: |
           set -uo pipefail
 
@@ -173,24 +174,28 @@ jobs:
           conclusion="success"
           summary=""
 
-          # A "differs from ... retrieved by livecheck" problem means upstream shipped
-          # a newer release after discover picked this version. That's the only audit
-          # problem we treat specially: this PR can't be salvaged, so we close it and
-          # re-bump at the new version. Every other audit problem is a real failure.
+          # Problems we don't treat as real failures:
+          #   - "differs from ... retrieved by livecheck": upstream shipped a newer
+          #     release after discover picked this version (handled by re-bump below).
+          #   - "redundant with version scanned from URL": the tap keeps an explicit
+          #     `version` as the single source of truth for the interpolated URLs.
           audit_real_problems() {
             echo "$1" | grep -E '^[[:space:]]+[-*] ' | \
-              grep -vE 'differs from .+ retrieved by livecheck' || true
+              grep -vE 'differs from .+ retrieved by livecheck' | \
+              grep -vE 'redundant with version scanned from URL' || true
           }
 
+          # Audit the tap-qualified name so it can't resolve to a same-named package
+          # in homebrew-core/cask (e.g. calendr, aseprite also exist upstream).
           # brew audit --online checks URLs which can fail transiently, so retry once
           # (but only when there are real problems; a stale-version diff won't heal).
           echo "::group::brew audit"
-          audit_output=$(brew audit --online --git --skip-style "$PACKAGE" 2>&1) || true
+          audit_output=$(brew audit --online --git --skip-style "$QUALIFIED" 2>&1) || true
           echo "$audit_output"
           if [ -n "$(audit_real_problems "$audit_output")" ]; then
             echo "::warning::brew audit failed, retrying in 10s..."
             sleep 10
-            audit_output=$(brew audit --online --git --skip-style "$PACKAGE" 2>&1) || true
+            audit_output=$(brew audit --online --git --skip-style "$QUALIFIED" 2>&1) || true
             echo "$audit_output"
           fi
           echo "::endgroup::"
@@ -220,7 +225,7 @@ jobs:
 
           # brew style blocks the bump: style must not degrade on master.
           echo "::group::brew style"
-          if ! style_output=$(brew style "$PACKAGE" 2>&1); then
+          if ! style_output=$(brew style "$QUALIFIED" 2>&1); then
             conclusion="failure"
             summary="${summary:+$summary; }brew style failed"
           fi

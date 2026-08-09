@@ -53,21 +53,31 @@ jobs:
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Tap-qualified so a bare name can't resolve to a same-named package in
+          # homebrew-core/cask (e.g. calendr, aseprite also exist upstream).
+          tap="${GITHUB_REPOSITORY_OWNER}/${GITHUB_REPOSITORY##*/homebrew-}"
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            # Extract the name from the file path (remove directory and .rb extension)
             name=$(basename "$file" .rb)
-            echo "Auditing $name (from $file)"
-            brew audit --online --git --skip-style "$name" || exit 1
+            echo "Auditing $tap/$name (from $file)"
+            if ! out=$(brew audit --online --git --skip-style "$tap/$name" 2>&1); then
+              echo "$out"
+              # The tap keeps an explicit `version` as the single source of truth for
+              # its interpolated URLs, so ignore the "redundant version" nit.
+              real=$(echo "$out" | grep -E '^[[:space:]]+[-*] ' \
+                | grep -vE 'redundant with version scanned from URL' || true)
+              [ -n "$real" ] && exit 1
+              echo "::notice::$name: only redundant-version reported; ignoring"
+            fi
           done
 
       - name: Run brew style
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
+          tap="${GITHUB_REPOSITORY_OWNER}/${GITHUB_REPOSITORY##*/homebrew-}"
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            # Extract the name from the file path (remove directory and .rb extension)
             name=$(basename "$file" .rb)
-            echo "Checking style for $name (from $file)"
-            brew style "$name" || exit 1
+            echo "Checking style for $tap/$name (from $file)"
+            brew style "$tap/$name" || exit 1
           done
 
       - name: Validate download URLs
