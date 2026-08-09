@@ -5,7 +5,7 @@ class CodebaseMemoryMcp < Formula
   license "MIT"
 
   livecheck do
-    url :homepage
+    url :stable
     strategy :github_latest
   end
 
