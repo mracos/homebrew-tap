@@ -61,12 +61,19 @@ jobs:
             echo "Auditing $tap/$name (from $file)"
             if ! out=$(brew audit --online --git --skip-style "$tap/$name" 2>&1); then
               echo "$out"
-              # The tap keeps an explicit `version` as the single source of truth for
-              # its interpolated URLs, so ignore the "redundant version" nit.
+              # Ignorable audit nits:
+              # - "redundant version": the tap keeps an explicit `version` as the
+              #   single source of truth for its interpolated URLs.
+              # - ftpmirror.gnu.org unreachable: the GNU redirector proxies to a
+              #   random mirror per request and intermittently returns 502. brew
+              #   itself skips online checks for ftp.gnu.org (brew#20456); the
+              #   "Validate download URLs" step below still curls the URL with
+              #   retries, so a genuinely dead URL is caught there.
               real=$(echo "$out" | grep -E '^[[:space:]]+[-*] ' \
-                | grep -vE 'redundant with version scanned from URL' || true)
+                | grep -vE 'redundant with version scanned from URL' \
+                | grep -vE 'The source URL https://ftpmirror\.gnu\.org/.* is not reachable' || true)
               [ -n "$real" ] && exit 1
-              echo "::notice::$name: only redundant-version reported; ignoring"
+              echo "::notice::$name: only ignorable problems reported (redundant version / ftpmirror flake)"
             fi
           done
 
@@ -95,7 +102,10 @@ jobs:
                 continue
               fi
               echo "Checking $url"
-              if ! curl --output /dev/null --silent --head --fail "$url"; then
+              # --retry rides out transient 5xx from mirror redirectors
+              # (ftpmirror.gnu.org 502s intermittently) but still fails hard
+              # on 404s, so wrong URLs are caught.
+              if ! curl --output /dev/null --silent --head --fail --retry 5 "$url"; then
                 echo "Error: URL $url is not accessible"
                 exit 1
               fi
