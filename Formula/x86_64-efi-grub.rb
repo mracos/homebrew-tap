@@ -1,9 +1,9 @@
 class X8664EfiGrub < Formula
   desc "GRUB2 x86_64-efi modules and image tools, cross-built on macOS"
   homepage "https://www.gnu.org/software/grub/"
-  url "https://ftpmirror.gnu.org/gnu/grub/grub-2.12.tar.xz"
-  mirror "https://ftp.gnu.org/gnu/grub/grub-2.12.tar.xz"
-  sha256 "f3c97391f7c4eaa677a78e090c7e97e6dc47b16f655f04683ebd37bef7fe0faa"
+  url "https://ftpmirror.gnu.org/gnu/grub/grub-2.14.tar.xz"
+  mirror "https://ftp.gnu.org/gnu/grub/grub-2.14.tar.xz"
+  sha256 "bc8d3c73535b8838d8c8e2654d73edc4e6ae8c8acdb45d5df5dc9a1547446d43"
   license "GPL-3.0-or-later"
 
   depends_on "freetype" => :build
