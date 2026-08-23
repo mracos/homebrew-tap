@@ -13,11 +13,13 @@ cask "milheiro" do
   app "Milheiro.app"
 
   caveats <<~EOS
-    Milheiro is a Safari extension. The build is unsigned, so install with:
-      brew install --cask --no-quarantine mracos/tap/milheiro
-    Then:
-      1. Open Milheiro.app once (registers the extension).
-      2. Safari > Settings > Extensions > enable Milheiro.
-      3. Safari > Develop > Allow Unsigned Extensions (resets each launch).
+    Safari extension, adhoc-signed. To finish:
+
+      1. Open Milheiro.app once, that is what registers the extension. macOS
+         blocks the first launch: allow it in System Settings > Privacy &
+         Security > "Open Anyway".
+      2. Turn on Safari > Settings > Developer > "Allow unsigned extensions".
+         Without it Safari hides the extension, and it resets on every relaunch.
+      3. Enable Milheiro in Safari > Settings > Extensions.
   EOS
 end
