@@ -112,11 +112,26 @@ jobs:
             done
           done
 
+  # scripts/ drives the bump automation, which only runs on a schedule -- without
+  # this job a regression there stays invisible until a Saturday bump breaks.
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Run script tests
+        run: ruby test/scripts/manual_bump_test.rb
+
   # Stable required-check gate: branch protection requires "test", and bump-one.yml
   # posts a "test" commit status to match. Keep a single job named `test` that only
-  # passes when both audit legs pass, regardless of which kinds a PR actually touched.
+  # passes when the audit legs and the unit tests pass, regardless of which kinds a
+  # PR actually touched.
   test:
-    needs: audit
+    needs: [audit, unit]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -126,4 +141,8 @@ jobs:
             echo "audit did not succeed: ${{ needs.audit.result }}"
             exit 1
           fi
-          echo "All audit legs passed"
+          if [ "${{ needs.unit.result }}" != "success" ]; then
+            echo "unit tests did not succeed: ${{ needs.unit.result }}"
+            exit 1
+          fi
+          echo "All audit legs and unit tests passed"

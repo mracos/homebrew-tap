@@ -92,15 +92,21 @@ class ManualBump
     resolved.gsub!(/\#\{version\.to_s\.split\(","\)\[(\d+)\]\}/) { parts[Regexp.last_match(1).to_i] }
 
     # Literal split-version URLs (e.g. `.../v1.3.16/App-v1.3.16.1-Source.zip` with
-    # current_version "1.3.16,1.3.16.1"). Replace longest old part first so a shorter
-    # component (e.g. "1.3.16") doesn't corrupt a longer one (e.g. "1.3.16.1").
+    # current_version "1.3.16,1.3.16.1"). Substitute positionally, left to right: the
+    # nth old component maps to the nth occurrence in the URL, which is how these URLs
+    # are built (tag in the path, asset version in the filename). A global gsub per
+    # component re-matches text an earlier substitution just wrote -- with both
+    # components equal ("1.3.18,1.3.18" -> "1.3.18.2,1.3.18.2") it yielded "1.3.18.2.2".
     if current_version.include?(",") && !url_str.include?('#{')
       old_parts = current_version.split(",")
       if old_parts.length == parts.length
-        old_parts.zip(parts).sort_by { |old, _| -old.length }.each do |old_part, new_part|
-          next if old_part == new_part
+        cursor = 0
+        old_parts.each_with_index do |old_part, i|
+          index = resolved.index(old_part, cursor)
+          next if index.nil?
 
-          resolved = resolved.gsub(old_part, new_part)
+          resolved[index, old_part.length] = parts[i]
+          cursor = index + parts[i].length
         end
       end
     end

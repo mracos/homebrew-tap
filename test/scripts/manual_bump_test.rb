@@ -124,6 +124,27 @@ class ManualBumpTest < Minitest::Test
     assert_equal "https://example.com/v1.3.17.2/App-v1.3.17.2-Source.zip", resolved
   end
 
+  # Both components identical, as in aseprite v1.3.18 (tag and asset agree). Each old
+  # component must consume its own occurrence rather than re-matching the substituted text.
+  def test_resolves_literal_split_version_with_identical_components
+    mb, _file = bumper("", new_version: "1.3.18.2,1.3.18.2")
+    url = "https://example.com/v1.3.18/App-v1.3.18-Source.zip"
+
+    resolved = mb.resolve_url(url, "1.3.18,1.3.18")
+
+    assert_equal "https://example.com/v1.3.18.2/App-v1.3.18.2-Source.zip", resolved
+  end
+
+  # Components equal upstream, diverging downstream (tag v1.3.17 ships asset v1.3.17.1).
+  def test_resolves_literal_split_version_diverging_components
+    mb, _file = bumper("", new_version: "1.3.17,1.3.17.1")
+    url = "https://example.com/v1.3.16/App-v1.3.16-Source.zip"
+
+    resolved = mb.resolve_url(url, "1.3.16,1.3.16")
+
+    assert_equal "https://example.com/v1.3.17/App-v1.3.17.1-Source.zip", resolved
+  end
+
   def test_updates_literal_split_version_url_in_formula
     content = <<~RUBY
       class Aseprite < Formula
