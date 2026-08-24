@@ -105,6 +105,9 @@ jobs:
     if: needs.discover.outputs.has_updates == 'true'
     strategy:
       fail-fast: false
+      # Each bump merges its own PR into master. Run them one at a time so a merge
+      # can't land while another job is mid-merge ("Base branch was modified").
+      max-parallel: 1
       matrix:
         include: ${{ fromJSON(needs.discover.outputs.matrix) }}
     uses: ./.github/workflows/bump-one.yml

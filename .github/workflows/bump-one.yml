@@ -253,6 +253,21 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ steps.brew-bump.outputs.pr_url || steps.manual-bump.outputs.pr_url }}
         run: |
-          set -euo pipefail
-          echo "Enabling auto-merge for $PR_URL"
-          gh pr merge "$PR_URL" --auto --squash --delete-branch
+          set -uo pipefail
+          # gh merges straight away when the PR is already green rather than queueing
+          # auto-merge, so another bump landing on master in between makes GitHub
+          # reject this one with "Base branch was modified". Each retry re-reads the
+          # moved base.
+          for attempt in 1 2 3 4 5; do
+            echo "Merging $PR_URL (attempt ${attempt})"
+            if gh pr merge "$PR_URL" --auto --squash --delete-branch; then
+              exit 0
+            fi
+            if [ "$(gh pr view "$PR_URL" --json state -q .state)" = "MERGED" ]; then
+              echo "::notice::$PR_URL was already merged"
+              exit 0
+            fi
+            sleep $((attempt * 10))
+          done
+          echo "::error::Could not merge $PR_URL after 5 attempts"
+          exit 1
