@@ -5,8 +5,7 @@ cask "wacom-tablet-patched@5.3.7-6" do
   version "5.3.7-6,patch-5"
   sha256 "97ed7a0e3f1d3b73c405d3b72adf4eef48374fe216e1fdcbc0a9eb84f823036b"
 
-  url "https://github.com/thenickdude/wacom-driver-fix/releases/download/#{version.csv.second}/Install-Wacom-Tablet-#{version.major_minor_patch}-patched.pkg",
-      verified: "github.com/thenickdude/wacom-driver-fix/"
+  url "https://github.com/thenickdude/wacom-driver-fix/releases/download/#{version.csv.second}/Install-Wacom-Tablet-#{version.major_minor_patch}-patched.pkg"
   name "Wacom Bamboo Tablet"
   homepage "https://www.wacom.com/support/product-support/drivers"
 
@@ -14,6 +13,8 @@ cask "wacom-tablet-patched@5.3.7-6" do
   livecheck do
     skip "Versioned cask pinned to driver 5.3.7-6"
   end
+
+  depends_on :macos
 
   pkg "Install-Wacom-Tablet-#{version.major_minor_patch}-patched.pkg"
 

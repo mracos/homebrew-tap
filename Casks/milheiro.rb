@@ -2,8 +2,7 @@ cask "milheiro" do
   version :latest
   sha256 :no_check
 
-  url "https://github.com/mracos/milheiro/releases/latest/download/Milheiro.dmg",
-      verified: "github.com/mracos/milheiro/"
+  url "https://github.com/mracos/milheiro/releases/latest/download/Milheiro.dmg"
   name "Milheiro"
   desc "Safari extension comparing LATAM flight prices in miles vs cash"
   homepage "https://github.com/mracos/milheiro"
