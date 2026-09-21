@@ -12,5 +12,7 @@ cask "anne-pro" do
     strategy :github_releases
   end
 
+  depends_on :macos
+
   app "AnnePro.app"
 end

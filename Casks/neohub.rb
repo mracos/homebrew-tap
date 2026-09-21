@@ -11,5 +11,7 @@ cask "neohub" do
     strategy :github_releases
   end
 
+  depends_on :macos
+
   app "NeoHub.app"
 end

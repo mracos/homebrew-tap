@@ -11,5 +11,7 @@ cask "tomahawk" do
     strategy :github_releases
   end
 
+  depends_on :macos
+
   app "Tomahawk.app"
 end
