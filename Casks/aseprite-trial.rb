@@ -1,6 +1,6 @@
 cask "aseprite-trial" do
-  version "1.3.18.3"
-  sha256 "85bd3d23e9e2891c42bc321ee56728540bbaa4c3ce5ebe2c1b14507cfedae5e9"
+  version "1.3.18.6"
+  sha256 "7318dc843e0469e3a703771dbdb17371e2cb8366a3512783a46bf27746347f44"
 
   url "https://www.aseprite.org/downloads/trial/v#{version}/Aseprite-v#{version}-trial-macOS.dmg"
   name "Aseprite Trial"
@@ -14,7 +14,7 @@ cask "aseprite-trial" do
 
   auto_updates false
   conflicts_with cask: "aseprite"
-  depends_on macos: :big_sur
+  depends_on :macos
 
   app "Aseprite.app"
 
