@@ -3,8 +3,8 @@
 # fully-qualified once (`brew install mracos/tap/nteract`); upgrades then
 # track this tap.
 cask "nteract" do
-  version "2.7.6-stable.202608280705"
-  sha256 "355d19221eb5de3e66b2cd872d4ea06836d8bff4058ad49d7f780ab1e2fe29dc"
+  version "2.8.2-stable.202610090609"
+  sha256 "f5f014b2b57449710138ee5cf06331dd48347e8af5c2c6128fc8b1b5fa59c6a8"
 
   url "https://github.com/nteract/desktop/releases/download/v#{version}/nteract-stable-darwin-arm64.dmg"
   name "nteract"
@@ -18,7 +18,7 @@ cask "nteract" do
   end
 
   depends_on arch: :arm64
-  depends_on macos: :big_sur
+  depends_on :macos
 
   app "nteract.app"
   # Upstream cask ships only the app; these CLIs live inside the bundle and
