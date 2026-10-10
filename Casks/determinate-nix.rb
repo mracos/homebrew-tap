@@ -1,6 +1,6 @@
 cask "determinate-nix" do
-  version "3.23.0"
-  sha256 "3190fd5eb19ed809d3338dbcf1715cbd1ad645b2095204a1111979720ce5a5c7"
+  version "3.23.1"
+  sha256 "405f9f65c96aa7e5e844dbf43b52eb8301057f70e3efbb3b7aea927a59815cfd"
 
   url "https://github.com/DeterminateSystems/nix-installer/releases/download/v#{version}/nix-installer-aarch64-darwin"
   name "Determinate Nix"
