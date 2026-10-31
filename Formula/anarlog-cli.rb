@@ -1,7 +1,7 @@
 class AnarlogCli < Formula
   desc "CLI and local MCP server for Anarlog meeting notes"
   homepage "https://github.com/fastrepl/anarlog"
-  version "1.4.31"
+  version "1.4.34"
   license "MIT"
 
   # Upstream ships no standalone CLI build yet; the signed `anarlog-cli` sidecar
@@ -11,12 +11,12 @@ class AnarlogCli < Formula
   if Hardware::CPU.arm?
     url "https://github.com/fastrepl/anarlog/releases/download/desktop_v#{version}/anarlog-macos-aarch64.dmg",
         using: :nounzip
-    sha256 "8b9b636ff7045e88f09aa0f7bce05dd546f4a2e7ea6de5b0c847154162935335"
+    sha256 "9ddfbdc9388d17239804f877f4deb86bd7f0fc93fba34baba02fdec716ce851c"
   end
   if Hardware::CPU.intel?
     url "https://github.com/fastrepl/anarlog/releases/download/desktop_v#{version}/anarlog-macos-x86_64.dmg",
         using: :nounzip
-    sha256 "a3481dc9e5bb036b06f46e51c7f76e0eb79563f06a25c7bedcdf32a25c0fa0c8"
+    sha256 "fe63ea0848bf1172ea033c532b93e119b96d38d9549e34c7b152a7422f251fa5"
   end
 
   livecheck do
