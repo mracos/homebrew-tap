@@ -17,6 +17,8 @@ class ReviewMan < Formula
   depends_on "gh"
   depends_on macos: :ventura
 
+  conflicts_with "review-man-fork", because: "both install PR Review.app and the pr-review launcher"
+
   def install
     # Mirrors scripts/build-app, which can't run here: its own `swift build`
     # trips over the Homebrew sandbox without --disable-sandbox.
