@@ -2,9 +2,9 @@ class ReviewManFork < Formula
   desc "Fork of review-man with an inbox, bulk viewed marks, find and PR actions"
   homepage "https://github.com/mracos/review-man"
   # Pinned to the fork's main, versioned by the commit date; --HEAD follows main.
-  url "https://github.com/mracos/review-man/archive/d134764b219e9b74a8ed5ffc679bf907a4c539c2.tar.gz"
-  version "0.0.0-20261108"
-  sha256 "17e1e663baa8e91a83f8266c9c607dfae8348848fdd70364d15e3900bd91b2d4"
+  url "https://github.com/mracos/review-man/archive/e86b1ea92c09b6a509f17c3ff7586de523d0cfdf.tar.gz"
+  version "0.0.0-20261108.1"
+  sha256 "f05b7a0d8a2e5964cacdd866da8a23f1762b0710e56cae2cbed761fffc5f525b"
   license "MIT"
   head "https://github.com/mracos/review-man.git", branch: "main"
 
