@@ -1,12 +1,11 @@
 cask "pen" do
   arch arm: "arm64", intel: "x64"
 
-  version "1.2.18"
-  sha256 arm:   "3113866f58d4fa6359491f685fdca430ca1669819c3e9613ecf72f55bd214b22",
-         intel: "e18272a04388b2c8449a9a2eee0e86a4810dff48fa4aa1a8b9b1863fe056ec5b"
+  version "1.2.22"
+  sha256 arm:   "9fcbeacb577aeb45a83ccaee864f06d0d80c02856e598fb97776c880698048af",
+         intel: "baeeb1de1d2ea482f056ce40443c9188d4c57a269159aa2ba3958417ae92d67f"
 
-  url "https://github.com/highagency/pen-desktop-releases/releases/download/v#{version}/Pen-#{version}-mac-#{arch}.dmg",
-      verified: "github.com/highagency/pen-desktop-releases/"
+  url "https://github.com/highagency/pen-desktop-releases/releases/download/v#{version}/Pen-#{version}-mac-#{arch}.dmg"
   name "pen.dev"
   desc "Design tool with .pen files and AI agent integration"
   homepage "https://www.pen.dev/"
