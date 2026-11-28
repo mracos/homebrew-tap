@@ -3,8 +3,8 @@
 # fully-qualified once (`brew install mracos/tap/nteract`); upgrades then
 # track this tap.
 cask "nteract" do
-  version "2.9.0-stable.202610230557"
-  sha256 "49267a545234d4aac1dca05cae4a9d2fae41e1f69b94ce6399bc55ac8184517b"
+  version "2.11.0-stable.202611261702"
+  sha256 "c71b02f3df97cfa75e5337a16c264e398430a89785e95981a13c3688225f4ece"
 
   url "https://github.com/nteract/desktop/releases/download/v#{version}/nteract-stable-darwin-arm64.dmg"
   name "nteract"
