@@ -1,6 +1,6 @@
 cask "heyclicky" do
-  version "1.1.2"
-  sha256 "fcf971872e04e111696370ade15c68f6f3812559d5f843b424bb3a7a800dcffc"
+  version "1.1.7"
+  sha256 "8b1a05b4d41b7921ec6ae63777e6a105350cf2cbb9f1f54d0d833a3c13f37599"
 
   url "https://github.com/farzaa/clicky-releases/releases/download/v#{version}/HeyClicky.dmg"
   name "HeyClicky"
